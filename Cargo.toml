@@ -1,0 +1,6 @@
+[package]
+name = "gbmu"
+version = "0.1.0"
+authors = ["Matt-Hurd <sabahbob@gmail.com>"]
+
+[dependencies]
