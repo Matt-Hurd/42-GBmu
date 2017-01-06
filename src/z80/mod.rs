@@ -19,10 +19,10 @@ pub struct Z80Registers {
     pub h: u8,
     pub l: u8,
     pub f: u8,
-    pub pc: u32, //should be u16, using u32 temporarily to handle overflow
+    pub pc: u16,
     pub sp: u16,
-    pub m: u8,
-    pub t: u8,
+    pub m: u16,
+    pub t: u16,
 }
 
 pub struct Z80 {
@@ -43,17 +43,17 @@ impl Z80 {
 
     pub fn do_op(&mut self, op: u8) {
         match op {
-            0x00    => ops::nop(self),
-            0x83    => ops::add_r_e(self),
-            0xB8    => ops::cp_r_b(self),
-            0xC5    => ops::push_bc(self),
-            0xE1    => ops::pop_hl(self),
-            0xFA    => ops::lda_mm(self),
-            _       => ops::unimplemented_op(self),
+            0x00    => ops::misc::nop(self),
+            0x83    => ops::add::add_r_e(self),
+            0xB8    => ops::cp::cp_r_b(self),
+            0xC5    => ops::misc::push_bc(self),
+            0xE1    => ops::misc::pop_hl(self),
+            0xFA    => ops::ld::lda_mm(self),
+            _       => ops::misc::unimplemented_op(self),
         }
     }
 
-    pub fn set_register_clock(&mut self, m: u8) {
+    pub fn set_register_clock(&mut self, m: u16) {
         self.r.m = m;
         self.r.t = m * 4;
     }
