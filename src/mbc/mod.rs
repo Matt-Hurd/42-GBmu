@@ -11,8 +11,11 @@ pub fn read_mbc(filename: path::PathBuf) -> Result<String, Box<Error>> {
         .and_then(|mut f| f.read_to_end(&mut data))
         .map_err(|_| "Could not read ROM"));
     try!(validate_rom(&data));
+    match data[0x147] {
+        0 => mbc0::read_mbc0(&data),
+        _ => panic!("Unsupported MBC".to_string()),
+    }
     Ok("Good".to_string())
-    // mbc0::read_mbc0(&data);
 }
 
 pub fn validate_rom(data: &[u8]) -> Result<String, Box<Error>>  {
