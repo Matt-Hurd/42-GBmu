@@ -19,7 +19,7 @@ pub struct Z80Registers {
     pub h: u8,
     pub l: u8,
     pub f: u8,
-    pub pc: u16,
+    pub pc: u32, //should be u16, using u32 temporarily to handle overflow
     pub sp: u16,
     pub m: u8,
     pub t: u8,
@@ -36,6 +36,9 @@ impl Z80 {
         let op = self.mmu.rb(self.r.pc);
         self.r.pc += 1;
         self.do_op(op);
+        self.r.pc &= 65535;
+        self.clock.m += self.r.m;
+        self.clock.t += self.r.t;
     }
 
     pub fn do_op(&mut self, op: u8) {
