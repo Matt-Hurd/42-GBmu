@@ -67,18 +67,30 @@ impl Z80Registers {
     }
 
     pub fn get_zero(&mut self) -> u8 {
-        self.f & 0x80 >> 7
+        match self.f & 0x80 {
+            0   => 0,
+            _   => 1
+        }
     }
 
     pub fn get_subtract(&mut self) -> u8 {
-        self.f & 0x40 >> 6
+        match self.f & 0x40 {
+            0   => 0,
+            _   => 1
+        }
     }
 
     pub fn get_half_carry(&mut self) -> u8 {
-        self.f & 0x20 >> 5
+        match self.f & 0x20 {
+            0   => 0,
+            _   => 1
+        }
     }
 
     pub fn get_carry(&mut self) -> u8 {
-        self.f & 0x10 >> 4
+        match self.f & 0x10 {
+            0   => 0,
+            _   => 1
+        }
     }
 }
