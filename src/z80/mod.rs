@@ -22,7 +22,7 @@ impl Z80 {
         let op = self.mmu.rb(self.r.pc);
         self.r.pc += 1;
         self.do_op(op);
-        self.r.pc &= 65535;
+        self.r.pc &= 0xFFFF;
         self.clock.m += self.r.m;
         self.clock.t += self.r.t;
     }
@@ -31,6 +31,7 @@ impl Z80 {
         match op {
             0x00    => ops::misc::nop(self),
             0x83    => ops::add::add_r_e(self),
+            0x8E    => ops::adc::adc_a_hl(self),
             0xB8    => ops::cp::cp_r_b(self),
             0xC5    => ops::misc::push_bc(self),
             0xE1    => ops::misc::pop_hl(self),

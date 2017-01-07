@@ -49,4 +49,36 @@ impl Z80Registers {
         self.d = (value >> 8) as u8;
         self.e = (value & 255) as u8;
     }
+
+    pub fn set_zero(&mut self) {
+        self.f |= 0x80;
+    }
+
+    pub fn set_subtract(&mut self) {
+        self.f |= 0x40;
+    }
+
+    pub fn set_half_carry(&mut self) {
+        self.f |= 0x20;
+    }
+
+    pub fn set_carry(&mut self) {
+        self.f |= 0x10;
+    }
+
+    pub fn get_zero(&mut self) -> u8 {
+        self.f & 0x80 >> 7
+    }
+
+    pub fn get_subtract(&mut self) -> u8 {
+        self.f & 0x40 >> 6
+    }
+
+    pub fn get_half_carry(&mut self) -> u8 {
+        self.f & 0x20 >> 5
+    }
+
+    pub fn get_carry(&mut self) -> u8 {
+        self.f & 0x10 >> 4
+    }
 }

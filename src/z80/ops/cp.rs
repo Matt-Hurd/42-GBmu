@@ -1,13 +1,12 @@
 use z80::Z80;
 
 pub fn cp_r_b(z80: &mut Z80) {
-    let temp = z80.r.a;
-    z80.r.f |= 0x40;
-    if ((temp - z80.r.b) & 255) != 0 {
-        z80.r.f |= 0x80;
+    z80.r.set_subtract();
+    if z80.r.a == z80.r.b {
+        z80.r.set_zero();
     }
-    if temp < z80.r.b {
-        z80.r.f |= 0x10;
+    if z80.r.a < z80.r.b {
+        z80.r.set_carry();
     }
     z80.set_register_clock(1);
 }
