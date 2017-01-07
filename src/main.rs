@@ -13,8 +13,7 @@ fn main() {
             Ok(n) => println!("{}", n),
             Err(err) => println!("Error: {}", err),
         }
-    }
-    else {
+    } else {
         println!("Usage: {} [rom]", args[0]);
         process::exit(1);
     }
