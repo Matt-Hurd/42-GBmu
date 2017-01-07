@@ -36,7 +36,7 @@ impl Z80 {
             0xC5    => ops::misc::push_bc(self),
             0xE1    => ops::misc::pop_hl(self),
             0xFA    => ops::ld::lda_mm(self),
-            _       => ops::misc::unimplemented_op(self),
+            _       => ops::misc::unimplemented_op(self, op),
         }
     }
 
