@@ -75,8 +75,13 @@ impl MMU {
                             return self.zram[(addr & 0x7F) as usize];
                         } else {
                             // I/O Control Handling
-                            // Not handled *heh*
-                            return 0;
+                            match addr & 0x00F0 {
+                                0x40 | 0x50 | 0x60 | 0x70   => {
+                                    return 0; // return self.gpu.rb(addr);
+                                },
+                                // Not handled *heh*
+                                _                           => return 0,
+                            }
                         }
                     }
                 };
@@ -126,7 +131,14 @@ impl MMU {
                             self.zram[(addr & 0x7F) as usize] = val;
                         } else {
                             // I/O Control Handling
-                            // Not handled *heh*
+                            match addr & 0x00F0 {
+                                0x40 | 0x50 | 0x60 | 0x70   => {
+                                    self.gpu.vram[(addr & 0x1FFF) as usize] = val;
+                                    self.gpu.update_tile(addr);
+                                },
+                                // Not handled *heh*
+                                _                           => (),
+                            }
                         }
                     }
                 };
