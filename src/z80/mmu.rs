@@ -17,6 +17,7 @@ pub struct MMU {
     pub rom: Vec<u8>,
     pub wram: Vec<u8>,
     pub eram: Vec<u8>,
+    pub zram: Vec<u8>,
     pub gpu: gpu::GPU,
 }
 
@@ -28,6 +29,7 @@ impl Default for MMU {
             rom: vec![],
             wram: vec![],
             eram: vec![],
+            zram: vec![],
             gpu: gpu::GPU::default(),
         }
     }

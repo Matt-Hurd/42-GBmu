@@ -3,7 +3,6 @@ pub struct GPU {
     pub mode: u8,
     pub mode_clock: u16,
     pub line: u8,
-    pub zram: Vec<u8>,
 }
 
 impl Default for GPU {
@@ -13,7 +12,6 @@ impl Default for GPU {
             mode: 0,
             mode_clock: 0,
             line: 0,
-            zram: vec![],
         }
     }
 }
