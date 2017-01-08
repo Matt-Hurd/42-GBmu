@@ -1,4 +1,4 @@
-use mbc;
+// use mbc;
 use std::path;
 use std::fs::File;
 use std::io::Read;
@@ -16,6 +16,19 @@ pub struct MMU {
     pub wram: Vec<u8>,
     pub eram: Vec<u8>,
     pub zram: Vec<u8>,
+}
+
+impl Default for MMU {
+    fn default () -> MMU {
+        MMU {
+            in_bios: true,
+            bios: vec![],
+            rom: vec![],
+            wram: vec![],
+            eram: vec![],
+            zram: vec![],
+        }
+    }
 }
 
 impl MMU {

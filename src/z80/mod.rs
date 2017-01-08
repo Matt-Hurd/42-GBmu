@@ -11,10 +11,28 @@ pub struct Z80Clock {
     pub t: u16,
 }
 
+impl Default for Z80Clock {
+    fn default () -> Z80Clock {
+        Z80Clock {
+            m: 0,
+            t: 0,
+        }
+    }
+}
 pub struct Z80 {
     pub clock: Z80Clock,
     pub r: registers::Z80Registers,
     pub mmu: mmu::MMU,
+}
+
+impl Default for Z80 {
+    fn default () -> Z80 {
+        Z80 {
+            clock: Z80Clock::default(),
+            mmu: mmu::MMU::default(),
+            r: registers::Z80Registers::default(),
+        }
+    }
 }
 
 impl Z80 {
