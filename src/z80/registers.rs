@@ -18,10 +18,6 @@ impl Z80Registers {
         (self.h as u16) << 8 + (self.l as u16)
     }
 
-    pub fn get_af(&mut self) -> u16 {
-        (self.a as u16) << 8 + (self.f as u16)
-    }
-
     pub fn get_bc(&mut self) -> u16 {
         (self.b as u16) << 8 + (self.c as u16)
     }
