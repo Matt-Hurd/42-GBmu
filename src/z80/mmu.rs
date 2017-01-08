@@ -72,7 +72,7 @@ impl MMU {
                     },
                     _   => {
                         if addr >= 0xFF80 {
-                            return self.gpu.zram[(addr & 0x7F) as usize];
+                            return self.zram[(addr & 0x7F) as usize];
                         } else {
                             // I/O Control Handling
                             // Not handled *heh*
@@ -123,7 +123,7 @@ impl MMU {
                     },
                     _   => {
                         if addr >= 0xFF80 {
-                            self.gpu.zram[(addr & 0x7F) as usize] = val;
+                            self.zram[(addr & 0x7F) as usize] = val;
                         } else {
                             // I/O Control Handling
                             // Not handled *heh*
