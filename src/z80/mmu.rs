@@ -17,7 +17,6 @@ pub struct MMU {
     pub rom: Vec<u8>,
     pub wram: Vec<u8>,
     pub eram: Vec<u8>,
-    pub zram: Vec<u8>,
     pub gpu: gpu::GPU,
 }
 
@@ -29,7 +28,6 @@ impl Default for MMU {
             rom: vec![],
             wram: vec![],
             eram: vec![],
-            zram: vec![],
             gpu: gpu::GPU::default(),
         }
     }
@@ -72,7 +70,7 @@ impl MMU {
                     },
                     _   => {
                         if addr >= 0xFF80 {
-                            return self.zram[(addr & 0x7F) as usize];
+                            return self.gpu.zram[(addr & 0x7F) as usize];
                         } else {
                             // I/O Control Handling
                             // Not handled *heh*
@@ -123,7 +121,7 @@ impl MMU {
                     },
                     _   => {
                         if addr >= 0xFF80 {
-                            self.zram[(addr & 0x7F) as usize] = val;
+                            self.gpu.zram[(addr & 0x7F) as usize] = val;
                         } else {
                             // I/O Control Handling
                             // Not handled *heh*
