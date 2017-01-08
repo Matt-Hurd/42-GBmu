@@ -1,6 +1,7 @@
 mod mmu;
 mod ops;
 mod registers;
+mod gpu;
 
 /*
 ** Z80 and MMU implementation largely ported from http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
@@ -46,6 +47,7 @@ impl Z80 {
         }
         self.clock.m += self.r.m;
         self.clock.t += self.r.t;
+        self.mmu.gpu.step(self.r.t);
     }
 
     pub fn do_op(&mut self, op: u8) {
@@ -82,5 +84,6 @@ impl Z80 {
         self.clock.m = 0;
         self.clock.t = 0;
         self.mmu.in_bios = true;
+        self.mmu.gpu.reset();
     }
 }

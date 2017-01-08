@@ -1,8 +1,10 @@
+use z80::gpu;
 // use mbc;
 use std::path;
 use std::fs::File;
 use std::io::Read;
 use std::error::Error;
+
 
 /*
 ** Z80 and MMU implementation largely ported from http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
@@ -16,6 +18,7 @@ pub struct MMU {
     pub wram: Vec<u8>,
     pub eram: Vec<u8>,
     pub zram: Vec<u8>,
+    pub gpu: gpu::GPU,
 }
 
 impl Default for MMU {
@@ -27,6 +30,7 @@ impl Default for MMU {
             wram: vec![],
             eram: vec![],
             zram: vec![],
+            gpu: gpu::GPU::default(),
         }
     }
 }
