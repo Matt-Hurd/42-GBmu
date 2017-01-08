@@ -24,5 +24,5 @@ pub fn nop(z80: &mut Z80) {
 }
 
 pub fn unimplemented_op(z80: &mut Z80, op: u8) {
-    panic!(format!("Unimplemented op {}", op))
+    panic!(format!("Unimplemented op 0x{:x}", op))
 }

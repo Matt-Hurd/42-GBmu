@@ -9,7 +9,10 @@ pub struct GPU {
     pub bgtile: bool,
     pub scx: u8,
     pub scy: u8,
-
+    pub switch_bg: bool,
+    pub bg_map: bool,
+    pub bg_tile: bool,
+    pub switch_lcd: bool,
 }
 
 impl Default for GPU {
@@ -25,6 +28,10 @@ impl Default for GPU {
             bgtile: false,
             scx: 0,
             scy: 0,
+            switch_bg: false,
+            bg_map: false,
+            bg_tile: false,
+            switch_lcd: false,
         }
     }
 }
@@ -79,7 +86,6 @@ impl GPU {
         }
     }
 
-
     /* I really don't like this implementation of update_tile and render_scanline
     ** They're simply being used so that I can continue to flesh out the reset
     ** of the program, as well as have a basic working functionality.
@@ -120,10 +126,10 @@ impl GPU {
         for i in 0 .. 160 {
             let ref mut color = self.palette[self.tileset[tile][y][x] as usize];
             self.screen[screen_offset] = 0;
-            self.screen[screen_offset] |= (color[0] as u32) << 24;
-            self.screen[screen_offset] |= (color[1] as u32) << 16;
-            self.screen[screen_offset] |= (color[2] as u32) << 8;
-            self.screen[screen_offset] |= color[3] as u32;
+            self.screen[screen_offset] |= (color[0] as u32) << 16;
+            self.screen[screen_offset] |= (color[1] as u32) << 8;
+            self.screen[screen_offset] |= color[2] as u32;
+            // self.screen[screen_offset] |= color[3] as u32; //Alpha
             x += 1;
             if x == 8 {
                 x = 0;
@@ -133,6 +139,51 @@ impl GPU {
                     tile += 256;
                 }
             }
+        }
+    }
+
+    pub fn rb(&mut self, addr: u16) -> u8 {
+        match addr {
+            0xFF40  => {
+                return
+                    if self.switch_bg { 0x01 } else { 0x00 } |
+                    if self.bg_map { 0x08 } else { 0x00 } |
+                    if self.bg_tile { 0x10 } else { 0x00 } |
+                    if self.switch_lcd { 0x80 } else { 0x00 };
+            },
+            0xFF42  => return self.scy,
+            0xFF43  => return self.scx,
+            0xFF44  => return self.line,
+            _       => return 0,
+        }
+    }
+
+    pub fn wb(&mut self, addr: u16, val: u8) {
+        match addr {
+            0xFF40  => {
+                self.switch_bg = val & 0x01 != 0;
+                self.bg_map = val & 0x08 != 0;
+                self.bg_tile = val & 0x10 != 0;
+                self.switch_lcd = val & 0x80 != 0 ;
+            },
+            0xFF42  => self.scy = val,
+            0xFF43  => self.scx = val,
+            0xFF47  => {
+                for i in 0 .. 4 {
+                    let color = match (val >> (i * 2)) & 3 {
+                        0   =>  0xFF,
+                        1   =>  0xC0,
+                        2   =>  0x60,
+                        3   =>  0x00,
+                        _   =>  0x00,
+                    };
+                    for x in 0 .. 3 {
+                        self.palette[i][x] = color;
+                    }
+                    self.palette[i][3] = 0xFF;
+                }
+            },
+            _       => (),
         }
     }
 }
