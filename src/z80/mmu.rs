@@ -1,3 +1,9 @@
+use mbc;
+use std::path;
+use std::fs::File;
+use std::io::Read;
+use std::error::Error;
+
 /*
 ** Z80 and MMU implementation largely ported from http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
 ** I'm not sure how I feel about the struct layout, probably will refactor later
@@ -115,6 +121,12 @@ impl MMU {
     pub fn ww(&mut self, addr: u16, val: u16) {
         self.wb(addr, (val >> 8) as u8);
         self.wb(addr + 1, (val & 0xFF) as u8);
+    }
+
+    pub fn load(&mut self, filename: path::PathBuf) -> Result<String, Box<Error>> {
+        File::open(&filename).and_then(|mut f| f.read_to_end(&mut self.rom))
+            .map_err(|_| "Could not read ROM")?;;
+        Ok("Good".to_string())
     }
 
     // Old rb implementation
