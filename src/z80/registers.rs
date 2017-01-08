@@ -34,15 +34,15 @@ impl Default for Z80Registers {
 
 impl Z80Registers {
     pub fn get_hl(&mut self) -> u16 {
-        (self.h as u16) << 8 + (self.l as u16)
+        ((self.h as u16) << 8) + (self.l as u16)
     }
 
     pub fn get_bc(&mut self) -> u16 {
-        (self.b as u16) << 8 + (self.c as u16)
+        ((self.b as u16) << 8) + (self.c as u16)
     }
 
     pub fn get_de(&mut self) -> u16 {
-        (self.d as u16) << 8 + (self.e as u16)
+        ((self.d as u16) << 8) + (self.e as u16)
     }
 
     pub fn set_hl(&mut self, value: u16) {
