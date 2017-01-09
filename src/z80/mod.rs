@@ -1,3 +1,5 @@
+use std::num::Wrapping;
+
 mod mmu;
 mod ops;
 mod registers;
@@ -9,8 +11,8 @@ mod debug;
 */
 
 pub struct Z80Clock {
-    pub m: u16,
-    pub t: u16,
+    pub m: u32,
+    pub t: u32,
 }
 
 impl Default for Z80Clock {
@@ -62,8 +64,8 @@ impl Z80 {
         if self.r.pc == 0x0100 {
             self.mmu.in_bios = false;
         }
-        self.clock.m += self.r.m;
-        self.clock.t += self.r.t;
+        self.clock.m = (Wrapping(self.clock.m) + Wrapping(self.r.m as u32)).0;
+        self.clock.t = (Wrapping(self.clock.t) + Wrapping(self.r.t as u32)).0;
         self.mmu.gpu.step(self.r.t);
     }
 
@@ -256,6 +258,17 @@ impl Z80 {
             0x30    => ops::jump::jr_u8(self, op),
             0x20    => ops::jump::jr_u8(self, op),
             0x28    => ops::jump::jr_u8(self, op),
+            0xDE    => ops::sbc::sbc(self, op),
+            0x9E    => ops::sbc::sbc(self, op),
+            0x9F    => ops::sbc::sbc(self, op),
+            0x98    => ops::sbc::sbc(self, op),
+            0x99    => ops::sbc::sbc(self, op),
+            0x9A    => ops::sbc::sbc(self, op),
+            0x9B    => ops::sbc::sbc(self, op),
+            0x9C    => ops::sbc::sbc(self, op),
+            0x9D    => ops::sbc::sbc(self, op),
+            0xF3    => ops::misc::di(self),
+            0xFB    => ops::misc::ei(self),
             _       => ops::misc::unimplemented_op(self, op),
         }
         if op != 0xCB && self.debug_r {

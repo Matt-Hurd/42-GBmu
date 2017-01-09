@@ -128,6 +128,16 @@ pub fn dec(z80: &mut Z80, op: u8) {
     z80.set_register_clock(1);
 }
 
+pub fn di(z80: &mut Z80) {
+    z80.r.ime = 0;
+    z80.set_register_clock(1);
+}
+
+pub fn ei(z80: &mut Z80) {
+    z80.r.ime = 1;
+    z80.set_register_clock(1);
+}
+
 pub fn unimplemented_op(z80: &mut Z80, op: u8) {
     panic!(format!("Unimplemented op 0x{:X}", op))
 }

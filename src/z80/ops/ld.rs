@@ -77,7 +77,7 @@ pub fn ld_a_p(z80: &mut Z80, op: u8) {
             z80.mmu.rb(addr)
         },
         0xF0        => {
-            let addr = z80.mmu.rb(z80.r.pc) as u16;
+            let addr = 0xFF00 + z80.mmu.rb(z80.r.pc) as u16;
             z80.r.pc += 1;
             z80.mmu.rb(addr)
         },
@@ -106,12 +106,21 @@ pub fn ld_p_a(z80: &mut Z80, op: u8) {
         0xE2        => z80.mmu.wb(0xFF00 + z80.r.c as u16, z80.r.a),
         _           => (),
     };
-    let hl = z80.r.get_hl();
     if op == 0x22 {
-        z80.r.set_hl(hl + 1);
+        if z80.r.l == 0xFF {
+            z80.r.h += 1;
+            z80.r.l = 0;
+        } else {
+            z80.r.l += 1;
+        }
     }
     else if op == 0x32 {
-        z80.r.set_hl(hl - 1);
+        if z80.r.l == 0x00 {
+            z80.r.h -= 1;
+            z80.r.l = 0xFF;
+        } else {
+            z80.r.l -= 1;
+        }
     }
     z80.set_register_clock(2);
 }

@@ -2,6 +2,7 @@ use z80::Z80;
 
 pub fn jr_u8(z80: &mut Z80, op: u8) {
     let i = z80.mmu.rb(z80.r.pc);
+    z80.r.pc += 1;
     let case = match op {
         0x18 => true,
         0x38 => z80.r.get_carry() == 1,
