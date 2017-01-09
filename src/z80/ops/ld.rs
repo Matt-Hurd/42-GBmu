@@ -28,26 +28,6 @@ pub fn ld_u8_r_r(z80: &mut Z80, op: u8) {
     z80.set_register_clock(1);
 }
 
-pub fn ld_hld_a(z80: &mut Z80) {
-    let addr = z80.r.get_hl();
-    let val = z80.r.a;
-    z80.mmu.wb(addr, val);
-    z80.r.set_hl(addr - 1);
-    z80.set_register_clock(2);
-}
-
-pub fn ld_rn_c(z80: &mut Z80) {
-    z80.r.c = z80.mmu.rb(z80.r.pc);
-    z80.r.pc += 1;
-    z80.set_register_clock(2);
-}
-
-pub fn ld_rn_a(z80: &mut Z80) {
-    z80.r.a = z80.mmu.rb(z80.r.pc);
-    z80.r.pc += 1;
-    z80.set_register_clock(2);
-}
-
 pub fn ld_i_on_a(z80: &mut Z80) {
     let addr = z80.mmu.rb(z80.r.pc) as u16;
     z80.mmu.wb(0xFF00 + addr, z80.r.a);
@@ -58,7 +38,6 @@ pub fn ld_i_on_a(z80: &mut Z80) {
 /*
 ** LD (16bits), (16bits)
 */
-
 pub fn ld_u16(z80: &mut Z80, op: u8) {
     let val = match op & 0xF {
         0x1     => {
@@ -87,16 +66,11 @@ pub fn ld_u16(z80: &mut Z80, op: u8) {
 /*
 ** LD A, pointer
 */
-
 pub fn ld_a_p(z80: &mut Z80, op: u8) {
     let val = match op {
         0x0A        => z80.mmu.rb(z80.r.get_bc()),
         0x1A        => z80.mmu.rb(z80.r.get_de()),
         0x2A | 0x3A => z80.mmu.rb(z80.r.get_hl()),
-        0x3E        => {
-            z80.r.pc += 1;
-            z80.mmu.rb(z80.r.pc - 1)
-            },
         0xFA        => {
             let addr = z80.mmu.rw(z80.r.pc);
             z80.r.pc += 2;
@@ -120,7 +94,46 @@ pub fn ld_a_p(z80: &mut Z80, op: u8) {
     z80.r.a = val;
 }
 
-pub fn ld_io_c_a(z80: &mut Z80) {
-    z80.mmu.wb(0xFF00 + z80.r.c as u16, z80.r.a);
+/*
+** LD pointer, A
+*/
+pub fn ld_p_a(z80: &mut Z80, op: u8) {
+    let val = match op {
+        0x02        => z80.mmu.wb(z80.r.get_bc(), z80.r.a),
+        0x12        => z80.mmu.wb(z80.r.get_de(), z80.r.a),
+        0x22 | 0x32 => z80.mmu.wb(z80.r.get_hl(), z80.r.a),
+        0xE2        => z80.mmu.wb(0xFF00 + z80.r.c as u16, z80.r.a),
+        _           => (),
+    };
+    let hl = z80.r.get_hl();
+    if op == 0x22 {
+        z80.r.set_hl(hl + 1);
+    }
+    else if op == 0x32 {
+        z80.r.set_hl(hl - 1);
+    }
+    z80.set_register_clock(2);
+}
+
+/*
+** LD r, $xx
+*/
+pub fn ld_r_xx(z80: &mut Z80, op: u8) {
+    let val = z80.mmu.rb(z80.r.pc);
+    z80.r.pc += 1;
+    match op {
+        0x06       => z80.r.b = val,
+        0x0E       => z80.r.c = val,
+        0x16       => z80.r.d = val,
+        0x1E       => z80.r.e = val,
+        0x26       => z80.r.h = val,
+        0x2E       => z80.r.l = val,
+        0x3E       => z80.r.a = val,
+        0x36       => {
+            let addr = z80.r.get_hl();
+            z80.mmu.wb(addr, val);
+        },
+        _          => (),
+    }
     z80.set_register_clock(2);
 }

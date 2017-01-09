@@ -7,3 +7,4 @@ pub mod helpers;
 pub mod xor;
 pub mod bit;
 pub mod jump;
+pub mod call;
