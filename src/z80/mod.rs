@@ -25,6 +25,8 @@ pub struct Z80 {
     pub clock: Z80Clock,
     pub r: registers::Z80Registers,
     pub mmu: mmu::MMU,
+    pub debug: bool,
+    pub debug_r: bool,
 }
 
 impl Default for Z80 {
@@ -33,11 +35,20 @@ impl Default for Z80 {
             clock: Z80Clock::default(),
             mmu: mmu::MMU::default(),
             r: registers::Z80Registers::default(),
+            debug: false,
+            debug_r: false,
         }
     }
 }
 
 impl Z80 {
+    pub fn debug_print_stack(&mut self) {
+        println!("  Stack Values:");
+        for x in self.r.sp .. 0xFFFF {
+            println!("      0x{:04X}: 0x{:02X}", x, self.mmu.rb(x));
+        }
+    }
+
     pub fn step(&mut self) {
         let op = self.mmu.rb(self.r.pc);
         self.r.pc += 1;
@@ -53,7 +64,9 @@ impl Z80 {
 
     pub fn do_cb(&mut self) {
         let op = self.mmu.rb(self.r.pc);
-        debug::translate_cb(op, self.r.pc);
+        if self.debug {
+            debug::translate_cb(op, self.r.pc);
+        }
         self.r.pc += 1;
         match op {
             0x7C    => ops::bit::bit_7_h(self),
@@ -75,11 +88,14 @@ impl Z80 {
             0x05 => ops::rotate::rl_r(self, op),
             _       => ops::misc::unimplemented_cb(self, op),
         }
-        self.r.debug_print();
+        if self.debug_r {
+            self.r.debug_print();
+            self.debug_print_stack();
+        }
     }
 
     pub fn do_op(&mut self, op: u8) {
-        if op != 0xCB {
+        if op != 0xCB && self.debug {
             debug::translate_op(op, self.r.pc);
         }
         match op {
@@ -222,8 +238,9 @@ impl Z80 {
             0xC9    => ops::ret::ret(self, op),
             _       => ops::misc::unimplemented_op(self, op),
         }
-        if op != 0xCB {
+        if op != 0xCB && self.debug_r {
             self.r.debug_print();
+            self.debug_print_stack();
         }
     }
 
@@ -241,7 +258,7 @@ impl Z80 {
         self.r.h = 0;
         self.r.l = 0;
         self.r.f = 0;
-        self.r.sp = 0;
+        self.r.sp = 0xFFFF;
         self.r.pc = 0;
         self.r.m = 0;
         self.r.t = 0;

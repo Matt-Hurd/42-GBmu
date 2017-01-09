@@ -177,8 +177,8 @@ impl MMU {
 
     // Read 16-bit val at addr
     pub fn ww(&mut self, addr: u16, val: u16) {
-        self.wb(addr, (val >> 8) as u8);
-        self.wb(addr + 1, (val & 0xFF) as u8);
+        self.wb(addr, (val & 0xFF) as u8);
+        self.wb(addr + 1, ((val & 0xFF00) >> 8) as u8);
     }
 
     pub fn load(&mut self, filename: path::PathBuf) -> Result<String, Box<Error>> {

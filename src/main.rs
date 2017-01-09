@@ -20,11 +20,10 @@ fn reset(z80: &mut z80::Z80) {
 
 fn frame(z80: &mut z80::Z80) {
     let fclk = z80.clock.t as u32 + 70224;
-    let debug = true;
     let mut paused = true;
     while {
         let mut input = "break".to_string();
-        if debug && paused {
+        if z80.debug && paused {
             let mut stuck = true;
             while stuck && paused
             {
@@ -55,6 +54,8 @@ fn main() {
 
     let mut core: z80::Z80 = z80::Z80::default();
     let result = core.mmu.load(path::PathBuf::from(&args[1]));
+    core.debug = true;
+    // core.debug_r = true;
     match result {
         Ok(n) => println!("{}", n),
         Err(err) => println!("Error: {}", err),
