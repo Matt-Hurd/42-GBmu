@@ -1,5 +1,5 @@
 pub struct GPU {
-    pub screen: Vec<u32>,
+    pub screen: [u32; 160 * 144],
     pub vram: Vec<u8>,
     pub tileset: Vec<Vec<Vec<u8>>>,
     pub palette: Vec<Vec<u32>>,
@@ -18,9 +18,9 @@ pub struct GPU {
 impl Default for GPU {
     fn default () -> GPU {
         GPU {
-            screen: vec![0; 160 * 144],
+            screen: [0; 160 * 144],
             vram: vec![0; 8192],
-            tileset: vec![vec![vec![0; 8]; 8]; 256],
+            tileset: vec![vec![vec![0; 8]; 8]; 512],
             palette: vec![vec![0; 4]; 4],
             mode: 0,
             mode_clock: 0,
@@ -57,7 +57,7 @@ impl GPU {
                 if self.mode_clock >= 172 {
                     self.mode_clock = 0;
                     self.mode = 2;
-                    // self.render_scanline();
+                    self.render_scanline();
                 }
             },
             2   => { //Hblank
@@ -116,7 +116,7 @@ impl GPU {
         let offset = if self.bgtile { 0x1C00 } else { 0x1C00 };
         let map_offset = offset + (((self.line + self.scy) as usize) & 255) >> 3;
         let y = ((self.line + self.scy) & 7) as usize;
-        let screen_offset = (self.line as usize) * 160 * 4;
+        let screen_offset = (self.line as usize) * 160;
         let mut line_offset = (self.scx >> 3) as usize;
         let mut tile = self.vram[map_offset + line_offset] as usize;
         if self.bgtile && tile < 128 {

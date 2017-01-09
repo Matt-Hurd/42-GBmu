@@ -140,7 +140,10 @@ impl MMU {
             //ROM1 (unbanked)
             0x4000 | 0x5000 | 0x6000 | 0x7000   => self.rom[addr as usize] = val,
             //VRAM
-            0x8000 | 0x9000                     => (), //gpu.vram[addr & 0x1FFF] = val,
+            0x8000 | 0x9000                     => {
+                self.gpu.vram[(addr & 0x1FFF) as usize] = val;
+                self.gpu.update_tile(addr);
+            },
             //External RAM
             0xA000 | 0xB000                     => self.eram[(addr & 0x1FFF) as usize] = val,
             //Working RAM

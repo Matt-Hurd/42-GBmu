@@ -1,31 +1,31 @@
 use z80::Z80;
 use std::num::Wrapping;
 
-pub fn add_a(z80: &mut Z80, op: u8) {
+pub fn sub(z80: &mut Z80, op: u8) {
     let a = z80.r.a;
     let mut val = match op {
-        0xC6    => {
+        0xD6    => {
             z80.r.pc += 1;
             z80.mmu.rb(z80.r.pc - 1)
         },
-        0x86    => z80.mmu.rb(z80.r.get_hl()),
-        0x87    => z80.r.a,
-        0x80    => z80.r.b,
-        0x81    => z80.r.c,
-        0x82    => z80.r.d,
-        0x83    => z80.r.e,
-        0x84    => z80.r.h,
-        0x85    => z80.r.l,
+        0x97    => z80.r.a,
+        0x90    => z80.r.b,
+        0x91    => z80.r.c,
+        0x92    => z80.r.d,
+        0x93    => z80.r.e,
+        0x94    => z80.r.h,
+        0x95    => z80.r.l,
         _       => 0,
     };
     z80.r.clear_flags();
-    z80.r.a = (Wrapping(a) - Wrapping(val)).0;
-    if z80.r.a == 0 {
+    z80.r.set_subtract(true);
+    if val == z80.r.a {
         z80.r.set_zero(true);
     }
-    else if z80.r.a < a {
+    else if val > z80.r.a {
         z80.r.set_carry(true);
     }
+    z80.r.a = (Wrapping(a) - Wrapping(val)).0;
     if (z80.r.a ^ val ^ a) & 0x10 != 0 {
         z80.r.set_half_carry(true);
     }
