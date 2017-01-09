@@ -1,6 +1,7 @@
 use std::process;
 use std::env;
 use std::path;
+use std::io;
 
 // mod mbc;
 mod z80;
@@ -19,7 +20,26 @@ fn reset(z80: &mut z80::Z80) {
 
 fn frame(z80: &mut z80::Z80) {
     let fclk = z80.clock.t as u32 + 70224;
+    let debug = true;
+    let mut paused = true;
     while {
+        let mut input = "break".to_string();
+        if debug && paused {
+            let mut stuck = true;
+            while stuck && paused
+            {
+                let mut input = String::new();
+        		io::stdin().read_line(&mut input)
+        			.expect("failed to read line");
+                input = input.trim().to_string();
+                if input == "continue" || input == "run" {
+                    paused = false;
+                }
+                if input == "step" || input == "" {
+                    stuck = false;
+                }
+            }
+        }
         z80.step();
         (z80.clock.t as u32) < fclk
     } {}

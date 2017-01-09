@@ -9,3 +9,4 @@ pub mod bit;
 pub mod jump;
 pub mod call;
 pub mod rotate;
+pub mod ret;

@@ -98,7 +98,7 @@ pub fn ld_a_p(z80: &mut Z80, op: u8) {
 ** LD pointer, A
 */
 pub fn ld_p_a(z80: &mut Z80, op: u8) {
-    let val = match op {
+    match op {
         0x02        => z80.mmu.wb(z80.r.get_bc(), z80.r.a),
         0x12        => z80.mmu.wb(z80.r.get_de(), z80.r.a),
         0x22 | 0x32 => z80.mmu.wb(z80.r.get_hl(), z80.r.a),

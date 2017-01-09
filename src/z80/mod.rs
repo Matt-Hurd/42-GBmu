@@ -2,6 +2,7 @@ mod mmu;
 mod ops;
 mod registers;
 mod gpu;
+mod debug;
 
 /*
 ** Z80 and MMU implementation largely ported from http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
@@ -52,7 +53,7 @@ impl Z80 {
 
     pub fn do_cb(&mut self) {
         let op = self.mmu.rb(self.r.pc);
-        println!("  Doing cb {:X}", op);
+        debug::translate_cb(op, self.r.pc);
         self.r.pc += 1;
         match op {
             0x7C    => ops::bit::bit_7_h(self),
@@ -74,10 +75,13 @@ impl Z80 {
             0x05 => ops::rotate::rl_r(self, op),
             _       => ops::misc::unimplemented_cb(self, op),
         }
+        self.r.debug_print();
     }
 
     pub fn do_op(&mut self, op: u8) {
-        println!("pc: {:x}, op: {:X}", self.r.pc, op);
+        if op != 0xCB {
+            debug::translate_op(op, self.r.pc);
+        }
         match op {
             0x00    => ops::misc::nop(self),
             0x03    => ops::misc::inc(self, op),
@@ -99,7 +103,10 @@ impl Z80 {
             0xB8    => ops::cp::cp_r_b(self),
             0xCB    => self.do_cb(),
             0xC5    => ops::misc::push_bc(self),
-            0xE1    => ops::misc::pop_hl(self),
+            0xF1    => ops::misc::pop_u16(self, op),
+            0xC1    => ops::misc::pop_u16(self, op),
+            0xD1    => ops::misc::pop_u16(self, op),
+            0xE1    => ops::misc::pop_u16(self, op),
             0xE0    => ops::ld::ld_i_on_a(self),
             0x02    => ops::ld::ld_p_a(self, op),
             0x12    => ops::ld::ld_p_a(self, op),
@@ -194,7 +201,29 @@ impl Z80 {
             0x72    => ops::ld::ld_u8_r_r(self, op),
             0x73    => ops::ld::ld_u8_r_r(self, op),
             0x74    => ops::ld::ld_u8_r_r(self, op),
+            0x17    => ops::rotate::rl_r(self, op),
+            0x35    => ops::misc::dec(self, op),
+            0x3d    => ops::misc::dec(self, op),
+            0x05    => ops::misc::dec(self, op),
+            0x0B    => ops::misc::dec(self, op),
+            0x0D    => ops::misc::dec(self, op),
+            0x15    => ops::misc::dec(self, op),
+            0x1B    => ops::misc::dec(self, op),
+            0x1D    => ops::misc::dec(self, op),
+            0x25    => ops::misc::dec(self, op),
+            0x2B    => ops::misc::dec(self, op),
+            0x2D    => ops::misc::dec(self, op),
+            0x3B    => ops::misc::dec(self, op),
+            0xD8    => ops::ret::ret(self, op),
+            0xD0    => ops::ret::ret(self, op),
+            0xC0    => ops::ret::ret(self, op),
+            0xC8    => ops::ret::ret(self, op),
+            0xD9    => ops::ret::ret(self, op),
+            0xC9    => ops::ret::ret(self, op),
             _       => ops::misc::unimplemented_op(self, op),
+        }
+        if op != 0xCB {
+            self.r.debug_print();
         }
     }
 
