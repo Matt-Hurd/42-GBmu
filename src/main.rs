@@ -55,7 +55,7 @@ fn main() {
     let mut core: z80::Z80 = z80::Z80::default();
     let result = core.mmu.load(path::PathBuf::from(&args[1]));
     core.debug = true;
-    // core.debug_r = true;
+    core.debug_r = true;
     match result {
         Ok(n) => println!("{}", n),
         Err(err) => println!("Error: {}", err),

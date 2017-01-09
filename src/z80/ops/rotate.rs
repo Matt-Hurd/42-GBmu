@@ -24,10 +24,10 @@ pub fn rl_r(z80: &mut Z80, op: u8) {
     }
     z80.r.clear_flags();
     if extra == 1 {
-        z80.r.set_carry();
+        z80.r.set_carry(true);
     }
     if val == 0 {
-        z80.r.set_zero();
+        z80.r.set_zero(true);
     }
     z80.set_register_clock(2);
     match op & 0xF {

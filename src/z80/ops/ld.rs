@@ -92,6 +92,7 @@ pub fn ld_a_p(z80: &mut Z80, op: u8) {
         z80.r.set_hl(hl - 1);
     }
     z80.r.a = val;
+    z80.set_register_clock(2);
 }
 
 /*
@@ -136,4 +137,24 @@ pub fn ld_r_xx(z80: &mut Z80, op: u8) {
         _          => (),
     }
     z80.set_register_clock(2);
+}
+
+/*
+** LD ($aabb), A
+*/
+pub fn ld_aabb_a(z80: &mut Z80, op: u8) {
+    let dest = z80.mmu.rw(z80.r.pc);
+    z80.r.pc += 2;
+    z80.mmu.wb(dest, z80.r.a);
+    z80.set_register_clock(4);
+}
+
+/*
+** LD ($aabb), SP
+*/
+pub fn ld_aabb_sp(z80: &mut Z80, op: u8) {
+    let dest = z80.mmu.rw(z80.r.pc);
+    z80.r.pc += 2;
+    z80.mmu.ww(dest, z80.r.get_hl());
+    z80.set_register_clock(5);
 }

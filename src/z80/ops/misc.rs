@@ -58,7 +58,7 @@ pub fn inc(z80: &mut Z80, op: u8) {
     };
     z80.r.clear_flags();
     if val == cmp {
-        z80.r.set_zero();
+        z80.r.set_zero(true);
         val = 0;
     } else {
         val += 1;
@@ -99,7 +99,7 @@ pub fn dec(z80: &mut Z80, op: u8) {
     };
     z80.r.clear_flags();
     if val == 1 {
-        z80.r.set_zero();
+        z80.r.set_zero(true);
         val = 0;
     }
     else if val == 0 {

@@ -47,7 +47,6 @@ impl Z80Registers {
         println!("  l: 0x{:02X}       bc: {:#X}", self.l,  bc);
         let de = self.get_de();
         println!("  f: 0x{:02X}       de: {:#X}", self.f,  de);
-        println!("");
 
     }
 
@@ -83,20 +82,36 @@ impl Z80Registers {
         self.e = (value & 255) as u8;
     }
 
-    pub fn set_zero(&mut self) {
-        self.f |= 0x80;
+    pub fn set_zero(&mut self, val: bool) {
+        if val {
+            self.f |= 0x80;
+        } else {
+            self.f &= 0xFF ^ 0x80;
+        }
     }
 
-    pub fn set_subtract(&mut self) {
-        self.f |= 0x40;
+    pub fn set_subtract(&mut self, val: bool) {
+        if val {
+            self.f |= 0x40;
+        } else {
+            self.f &= 0xFF ^ 0x40;
+        }
     }
 
-    pub fn set_half_carry(&mut self) {
-        self.f |= 0x20;
+    pub fn set_half_carry(&mut self, val: bool) {
+        if val {
+            self.f |= 0x20;
+        } else {
+            self.f &= 0xFF ^ 0x20;
+        }
     }
 
-    pub fn set_carry(&mut self) {
-        self.f |= 0x10;
+    pub fn set_carry(&mut self, val: bool) {
+        if val {
+            self.f |= 0x10;
+        } else {
+            self.f &= 0xFF ^ 0x10;
+        }
     }
 
     pub fn clear_flags(&mut self) {

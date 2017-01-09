@@ -42,10 +42,15 @@ impl Default for Z80 {
 }
 
 impl Z80 {
+    pub fn debug_print_cpu_time(&mut self) {
+        println!("CPU mtime: {}", self.clock.m);
+    }
     pub fn debug_print_stack(&mut self) {
-        println!("  Stack Values:");
-        for x in self.r.sp .. 0xFFFF {
-            println!("      0x{:04X}: 0x{:02X}", x, self.mmu.rb(x));
+        if self.r.sp != 0xFFFE {
+            println!("  Stack Values:");
+            for x in self.r.sp .. 0xFFFE {
+                println!("      0x{:04X}: 0x{:02X}", x, self.mmu.rb(x));
+            }
         }
     }
 
@@ -90,7 +95,9 @@ impl Z80 {
         }
         if self.debug_r {
             self.r.debug_print();
+            self.debug_print_cpu_time();
             self.debug_print_stack();
+            println!("");
         }
     }
 
@@ -106,7 +113,6 @@ impl Z80 {
             0x13    => ops::misc::inc(self, op),
             0x14    => ops::misc::inc(self, op),
             0x1C    => ops::misc::inc(self, op),
-            0x20    => ops::jump::jr_nz_n(self),
             0x23    => ops::misc::inc(self, op),
             0x24    => ops::misc::inc(self, op),
             0x2C    => ops::misc::inc(self, op),
@@ -116,7 +122,6 @@ impl Z80 {
             0x83    => ops::add::add_r_e(self),
             0x8E    => ops::adc::adc_a_hl(self),
             0xAF    => ops::xor::xor_a(self),
-            0xB8    => ops::cp::cp_r_b(self),
             0xCB    => self.do_cb(),
             0xC5    => ops::misc::push_bc(self),
             0xF1    => ops::misc::pop_u16(self, op),
@@ -135,7 +140,6 @@ impl Z80 {
             0xC4    => ops::call::call(self, op),
             0xCC    => ops::call::call(self, op),
             0x01    => ops::ld::ld_u16(self, op),
-            0x08    => ops::ld::ld_u16(self, op),
             0x11    => ops::ld::ld_u16(self, op),
             0x21    => ops::ld::ld_u16(self, op),
             0x31    => ops::ld::ld_u16(self, op),
@@ -236,11 +240,29 @@ impl Z80 {
             0xC8    => ops::ret::ret(self, op),
             0xD9    => ops::ret::ret(self, op),
             0xC9    => ops::ret::ret(self, op),
+            0xFE    => ops::cp::cp_r(self, op),
+            0xBE    => ops::cp::cp_r(self, op),
+            0xBF    => ops::cp::cp_r(self, op),
+            0xB8    => ops::cp::cp_r(self, op),
+            0xB9    => ops::cp::cp_r(self, op),
+            0xBA    => ops::cp::cp_r(self, op),
+            0xBB    => ops::cp::cp_r(self, op),
+            0xBC    => ops::cp::cp_r(self, op),
+            0xBD    => ops::cp::cp_r(self, op),
+            0xEA    => ops::ld::ld_aabb_a(self, op),
+            0x08    => ops::ld::ld_aabb_sp(self, op),
+            0x18    => ops::jump::jr_u8(self, op),
+            0x38    => ops::jump::jr_u8(self, op),
+            0x30    => ops::jump::jr_u8(self, op),
+            0x20    => ops::jump::jr_u8(self, op),
+            0x28    => ops::jump::jr_u8(self, op),
             _       => ops::misc::unimplemented_op(self, op),
         }
         if op != 0xCB && self.debug_r {
             self.r.debug_print();
+            self.debug_print_cpu_time();
             self.debug_print_stack();
+            println!("");
         }
     }
 
