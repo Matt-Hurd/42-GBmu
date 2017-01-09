@@ -8,3 +8,4 @@ pub mod xor;
 pub mod bit;
 pub mod jump;
 pub mod call;
+pub mod rotate;

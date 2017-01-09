@@ -56,6 +56,22 @@ impl Z80 {
         self.r.pc += 1;
         match op {
             0x7C    => ops::bit::bit_7_h(self),
+            0x16 => ops::rotate::rl_r(self, op),
+            0x17 => ops::rotate::rl_r(self, op),
+            0x10 => ops::rotate::rl_r(self, op),
+            0x11 => ops::rotate::rl_r(self, op),
+            0x12 => ops::rotate::rl_r(self, op),
+            0x13 => ops::rotate::rl_r(self, op),
+            0x14 => ops::rotate::rl_r(self, op),
+            0x15 => ops::rotate::rl_r(self, op),
+            0x06 => ops::rotate::rl_r(self, op),
+            0x07 => ops::rotate::rl_r(self, op),
+            0x00 => ops::rotate::rl_r(self, op),
+            0x01 => ops::rotate::rl_r(self, op),
+            0x02 => ops::rotate::rl_r(self, op),
+            0x03 => ops::rotate::rl_r(self, op),
+            0x04 => ops::rotate::rl_r(self, op),
+            0x05 => ops::rotate::rl_r(self, op),
             _       => ops::misc::unimplemented_cb(self, op),
         }
     }
@@ -178,7 +194,6 @@ impl Z80 {
             0x72    => ops::ld::ld_u8_r_r(self, op),
             0x73    => ops::ld::ld_u8_r_r(self, op),
             0x74    => ops::ld::ld_u8_r_r(self, op),
-
             _       => ops::misc::unimplemented_op(self, op),
         }
     }

@@ -81,6 +81,10 @@ impl Z80Registers {
         self.f |= 0x10;
     }
 
+    pub fn clear_flags(&mut self) {
+        self.f = 0;
+    }
+
     pub fn get_zero(&mut self) -> u8 {
         match self.f & 0x80 {
             0   => 0,
