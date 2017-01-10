@@ -1,37 +1,121 @@
+pub struct LCDC {
+    pub lcd_enable: bool,
+    pub window_tile_map_address: bool,
+    pub window_enable: bool,
+    pub bg_window_tile_data: bool,
+    pub bg_tile_map_address: bool,
+    pub obj_size: bool,
+    pub obj_enable: bool,
+    pub bg_enable: bool,
+    pub val: u8,
+}
+
+impl Default for LCDC {
+    fn default () -> LCDC {
+        LCDC {
+            lcd_enable: false,
+            window_tile_map_address: false,
+            window_enable: false,
+            bg_window_tile_data: false,
+            bg_tile_map_address: false,
+            obj_size: false,
+            obj_enable: false,
+            bg_enable: false,
+            val: 0,
+        }
+    }
+}
+
+impl LCDC {
+    pub fn set(&mut self, val: u8) {
+        self.lcd_enable =              if val & 0x80 != 0 { true } else { false };
+        self.window_tile_map_address = if val & 0x40 != 0 { true } else { false };
+        self.window_enable =           if val & 0x20 != 0 { true } else { false };
+        self.bg_window_tile_data =     if val & 0x10 != 0 { true } else { false };
+        self.bg_tile_map_address =     if val & 0x08 != 0 { true } else { false };
+        self.obj_size =                if val & 0x04 != 0 { true } else { false };
+        self.obj_enable =              if val & 0x02 != 0 { true } else { false };
+        self.bg_enable =               if val & 0x01 != 0 { true } else { false };
+        self.val = val;
+    }
+}
+
+pub struct STAT {
+    pub ly_interrupt: bool,
+    pub mode_2_oam_interrupt: bool,
+    pub mode_1_vblank_interrupt: bool,
+    pub mode_0_hblank_interrupt: bool,
+    pub ly_flag: bool,
+    pub mode: u8,
+    pub val: u8,
+}
+
+impl Default for STAT {
+    fn default () -> STAT {
+        STAT {
+            ly_interrupt: false,
+            mode_2_oam_interrupt: false,
+            mode_1_vblank_interrupt: false,
+            mode_0_hblank_interrupt: false,
+            ly_flag: false,
+            mode: 0,
+            val: 0,
+        }
+    }
+}
+
+impl STAT {
+    pub fn set(&mut self, val: u8) {
+        self.ly_interrupt =             if val & 0x40 != 0 { true } else { false };
+        self.mode_2_oam_interrupt =     if val & 0x20 != 0 { true } else { false };
+        self.mode_1_vblank_interrupt =  if val & 0x10 != 0 { true } else { false };
+        self.mode_0_hblank_interrupt =  if val & 0x08 != 0 { true } else { false };
+        self.ly_flag =                  if val & 0x04 != 0 { true } else { false };
+        self.mode =                     val & 0x3;
+        self.val  =                     val;
+    }
+}
+
 pub struct GPU {
     pub screen: [u32; 160 * 144],
-    pub vram: Vec<u8>,
-    pub tileset: Vec<Vec<Vec<u8>>>,
-    pub palette: Vec<Vec<u32>>,
-    pub mode_clock: u16,
-    pub mode: u8,
-    pub line: u8,
-    pub bgtile: bool,
-    pub scx: u8,
+    pub tiles: [[u8; 16]; 384],
+    pub map: [[u8; 32]; 64],
+    pub lcdc: LCDC,
+    pub stat: STAT,
     pub scy: u8,
-    pub switch_bg: bool,
-    pub bg_map: bool,
-    pub bg_tile: bool,
-    pub switch_lcd: bool,
+    pub scx: u8,
+    pub ly: u8,
+    pub lyc: u8,
+    pub dma: u8,
+    pub bgp: u8,
+    pub obp0: u8,
+    pub obp1: u8,
+    pub wy: u8,
+    pub wx: u8,
+    pub mode_clock: u16,
+    pub line: u8,
 }
 
 impl Default for GPU {
     fn default () -> GPU {
         GPU {
             screen: [0; 160 * 144],
-            vram: vec![0; 8192],
-            tileset: vec![vec![vec![0; 8]; 8]; 512],
-            palette: vec![vec![0; 4]; 4],
-            mode: 0,
+            tiles: [[0; 16]; 384],
+            map: [[0; 32]; 64],
+            lcdc: LCDC::default(),
+            stat: STAT::default(),
+            scy: 0,
+            scx: 0,
+            ly: 0,
+            lyc: 0,
+            dma: 0,
+            bgp: 0,
+            obp0: 0,
+            obp1: 0,
+            wy: 0,
+            wx: 0,
             mode_clock: 0,
             line: 0,
-            bgtile: false,
-            scx: 0,
-            scy: 0,
-            switch_bg: false,
-            bg_map: false,
-            bg_tile: false,
-            switch_lcd: false,
         }
     }
 }
@@ -43,41 +127,43 @@ impl GPU {
         }
     }
 
-    //I'm not sure this is 100% accurate, might need changes down the line
-    pub fn step(&mut self, register_t: u16) {
-        self.mode_clock += register_t;
-        match self.mode {
-            0   => { //OAM Read mode
-                if self.mode_clock >= 80 {
+    //Doesn't handle preventing VRAM or OAM access
+    pub fn step(&mut self, register_m: u16) {
+        self.mode_clock += register_m;
+        match self.stat.mode {
+            2   => { //OAM Search
+                //Decides which sprites are visible
+                //Puts sprites that are visibile into array of up to 10
+                //x != 0 && line >= sprite.y && line <= sprite.y + sprite.h
+                if self.mode_clock >= 20 {
                     self.mode_clock = 0;
-                    self.mode = 1;
+                    self.stat.mode = 3;
                 }
             },
-            1   => { //VRAM read mode
-                if self.mode_clock >= 172 {
+            3   => { //Pixel Transfer
+                if self.mode_clock >= 43 {
                     self.mode_clock = 0;
-                    self.mode = 2;
+                    self.stat.mode = 0;
                     self.render_scanline();
                 }
             },
-            2   => { //Hblank
-                if self.mode_clock >= 204 {
+            0   => { //Hblank
+                if self.mode_clock >= 51 {
                     self.mode_clock = 0;
                     self.line += 1;
                     if self.line == 143 {
-                        self.mode = 3;
-                        //self.draw()
+                        self.stat.mode = 1;
                     } else {
-                        self.mode = 0;
+                        self.stat.mode = 0;
                     }
                 }
             },
-            3   => { //Vblank
-                if self.mode_clock >= 456 {
+            1   => { //Vblank
+                if self.mode_clock >= 114 {
                     self.mode_clock = 0;
                     self.line += 1;
                     if self.line == 153 {
-                        self.mode = 0;
+                        self.stat.mode = 2;
                         self.line = 0;
                     }
                 }
@@ -86,104 +172,61 @@ impl GPU {
         }
     }
 
-    /* I really don't like this implementation of update_tile and render_scanline
-    ** They're simply being used so that I can continue to flesh out the reset
-    ** of the program, as well as have a basic working functionality.
-    ** They were taken from http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Graphics
-    ** They will be replaced. Ideally update_tile will be removed.
-    **
-    ** Also need to find out how to avoid so many `as usize` casts.
-    */
-
-    pub fn update_tile(&mut self, addr: u16) {
-        let relative: usize = (addr & 0x1FFE) as usize;
-        let tile: usize = (relative >> 4) & 511;
-        let y: usize = (relative >> 1) & 7;
-
-        for x in 0 .. 8 {
-            let sx = 1 << (7 - x);
-            self.tileset[tile][y][x] = 0;
-            if self.vram[relative] & sx != 0 {
-                self.tileset[tile][y][x] |= 1;
-            }
-            if self.vram[relative + 1] & sx != 0 {
-                self.tileset[tile][y][x] |= 2;
-            }
-        }
-    }
 
     pub fn render_scanline(&mut self) {
-        let offset = if self.bgtile { 0x1C00 } else { 0x1C00 };
-        let map_offset = offset + (((self.line + self.scy) as usize) & 255) >> 3;
-        let y = ((self.line + self.scy) & 7) as usize;
-        let screen_offset = (self.line as usize) * 160;
-        let mut line_offset = (self.scx >> 3) as usize;
-        let mut tile = self.vram[map_offset + line_offset] as usize;
-        if self.bgtile && tile < 128 {
-            tile += 256;
-        }
-        let mut x = (self.scx & 7) as usize;
-        for i in 0 .. 160 {
-            let ref mut color = self.palette[self.tileset[tile][y][x] as usize];
-            self.screen[screen_offset] = 0;
-            self.screen[screen_offset] |= (color[0] as u32) << 16;
-            self.screen[screen_offset] |= (color[1] as u32) << 8;
-            self.screen[screen_offset] |= color[2] as u32;
-            // self.screen[screen_offset] |= color[3] as u32; //Alpha
-            x += 1;
-            if x == 8 {
-                x = 0;
-                line_offset = (line_offset + 1) & 31;
-                tile = self.vram[map_offset + line_offset] as usize;
-                if self.bgtile && tile < 128 {
-                    tile += 256;
-                }
-            }
-        }
+        let start_y = self.line + self.scy;
+        let fifo = [[0, 0]; 16];
     }
 
     pub fn rb(&mut self, addr: u16) -> u8 {
-        match addr {
-            0xFF40  => {
-                return
-                    if self.switch_bg { 0x01 } else { 0x00 } |
-                    if self.bg_map { 0x08 } else { 0x00 } |
-                    if self.bg_tile { 0x10 } else { 0x00 } |
-                    if self.switch_lcd { 0x80 } else { 0x00 };
+        return match addr {
+            0xFF40  => self.lcdc.val,
+            0xFF41  => self.stat.val,
+            0xFF42  => self.scy,
+            0xFF43  => self.scx,
+            0xFF44  => self.ly,
+            0xFF45  => self.lyc,
+            0xFF46  => self.dma,
+            0xFF47  => self.bgp,
+            0xFF48  => self.obp0,
+            0xFF49  => self.obp1,
+            0xFF4A  => self.wy,
+            0xFF4B  => self.wx,
+            _       => {
+                if addr < 0x1800 {
+                    self.tiles[(addr / 16) as usize][(addr % 16) as usize]
+                }
+                else if addr < 0x2000 {
+                    let map_addr = addr % 0x1800;
+                    self.map[(map_addr / 32) as usize][(map_addr % 32) as usize]
+                } else { 0 }
             },
-            0xFF42  => return self.scy,
-            0xFF43  => return self.scx,
-            0xFF44  => return self.line,
-            _       => return 0,
         }
     }
 
     pub fn wb(&mut self, addr: u16, val: u8) {
         match addr {
-            0xFF40  => {
-                self.switch_bg = val & 0x01 != 0;
-                self.bg_map = val & 0x08 != 0;
-                self.bg_tile = val & 0x10 != 0;
-                self.switch_lcd = val & 0x80 != 0 ;
-            },
+            0xFF40  => self.lcdc.set(val),
+            0xFF41  => self.stat.set(val),
             0xFF42  => self.scy = val,
             0xFF43  => self.scx = val,
-            0xFF47  => {
-                for i in 0 .. 4 {
-                    let color = match (val >> (i * 2)) & 3 {
-                        0   =>  0xFF,
-                        1   =>  0xC0,
-                        2   =>  0x60,
-                        3   =>  0x00,
-                        _   =>  0x00,
-                    };
-                    for x in 0 .. 3 {
-                        self.palette[i][x] = color;
-                    }
-                    self.palette[i][3] = 0xFF;
+            0xFF44  => self.ly = val,
+            0xFF45  => self.lyc = val,
+            0xFF46  => self.dma = val,
+            0xFF47  => self.bgp = val,
+            0xFF48  => self.obp0 = val,
+            0xFF49  => self.obp1 = val,
+            0xFF4A  => self.wy = val,
+            0xFF4B  => self.wx = val,
+            _       => {
+                if addr < 0x1800 {
+                    self.tiles[(addr / 16) as usize][(addr % 16) as usize] = val;
+                }
+                else if addr < 0x2000 {
+                    let map_addr = addr % 0x1800;
+                    self.map[(map_addr / 32) as usize][(map_addr % 32) as usize] = val;
                 }
             },
-            _       => (),
         }
     }
 }

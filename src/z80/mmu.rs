@@ -83,7 +83,7 @@ impl MMU {
             //ROM1 (unbanked)
             0x4000 | 0x5000 | 0x6000 | 0x7000   => return self.rom[addr as usize],
             //VRAM
-            0x8000 | 0x9000                     => return 0, //gpu.vram[addr & 0x1FFF],
+            0x8000 | 0x9000                     => return self.gpu.rb(addr & 0x1FFF),
             //External RAM
             0xA000 | 0xB000                     => return self.eram[(addr & 0x1FFF) as usize],
             //Working RAM
@@ -141,8 +141,7 @@ impl MMU {
             0x4000 | 0x5000 | 0x6000 | 0x7000   => self.rom[addr as usize] = val,
             //VRAM
             0x8000 | 0x9000                     => {
-                self.gpu.vram[(addr & 0x1FFF) as usize] = val;
-                self.gpu.update_tile(addr);
+                self.gpu.wb(addr & 0x1FFF, val);
             },
             //External RAM
             0xA000 | 0xB000                     => self.eram[(addr & 0x1FFF) as usize] = val,
@@ -189,57 +188,4 @@ impl MMU {
             .map_err(|_| "Could not read ROM")?;;
         Ok("Good".to_string())
     }
-
-    // Old rb implementation
-    // // Read 8-bit byte at addr
-    // pub fn rb(&mut self, addr: u16) -> u8 {
-    //     let range = addr & 0xF000;
-    //     if range <= 0x1000 { //bios
-    //         if self.in_bios && addr < 0x0100 {
-    //                 return self.bios[addr as usize];
-    //         }
-    //         return self.rom[addr as usize];
-    //     }
-    //     else if range <= 0x3000 { //rom0
-    //         return self.rom[addr];
-    //     }
-    //     else if range <= 0x7000 { //rom1 (no banking)
-    //         return self.rom[addr];
-    //     }
-    //     else if range <= 0x9000 { //GPU
-    //         //return gpu.vram[addr & 0x1FFF]
-    //     }
-    //     else if range <= 0xB000 { //external ram
-    //         return self.eram[addr & 0x1FFF];
-    //     }
-    //     else if range <= 0xD000 { //working ram
-    //         return self.wram[addr & 0x1FFF];
-    //     }
-    //     else if range <= 0xE000 { //working ram shadow
-    //         return self.wram[addr & 0x1FFF];
-    //     } else { //working ram shadow, I/O, Zero-page RAM
-    //         let wram_range = addr & 0x0F00;
-    //         if wram_range <= 0xD00 { //wram shadow
-    //             return self.wram[addr & 0x1FFF]
-    //         }
-    //         else if wram_range <= 0xE00 {
-    // 		    // Graphics: object attribute memory
-    // 		    // OAM is 160 bytes, remaining bytes read as 0
-    //             if add < 0xFEA0 {
-    //                 //return gpu.oam[addr & 0xFF];
-    //             } else {
-    //                 return 0;
-    //             }
-    //         } else {
-    //             if add >= 0xFF80 {
-    //                 return mmu.zram[addr & 0x7F];
-    //             } else {
-    //                 // I/O Control Handling
-    //                 // Not handled *heh*
-    //                 return 0;
-    //             }
-    //         }
-    //     }
-    //     panic!("Invalid memory read!".to_string());
-    // }
 }

@@ -66,7 +66,7 @@ impl Z80 {
         }
         self.clock.m = (Wrapping(self.clock.m) + Wrapping(self.r.m as u32)).0;
         self.clock.t = (Wrapping(self.clock.t) + Wrapping(self.r.t as u32)).0;
-        self.mmu.gpu.step(self.r.t);
+        self.mmu.gpu.step(self.r.m);
     }
 
     pub fn do_cb(&mut self) {
