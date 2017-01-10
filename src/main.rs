@@ -47,7 +47,8 @@ fn frame(z80: &mut z80::Z80) {
         z80.step();
         if z80.r.pc == 0x00FA {
             // panic!("Reached the loop".to_string())
-            z80.r.pc += 1; //Totally skipping the checksum, something is wrong
+            // z80.r.pc += 1; //Totally skipping the checksum, something is wrong
+            ;
         }
         (z80.clock.t as u32) < fclk
     } {}

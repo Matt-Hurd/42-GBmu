@@ -1,4 +1,6 @@
-pub fn translate_op(op: u8, addr: u16) {
+use z80::Z80;
+
+pub fn translate_op(op: u8, addr: u16, z80: &mut Z80) {
     let op_str = match op {
         0x00 => "NOP",
         0x01 => "LD BC,$aabb",
@@ -245,7 +247,7 @@ pub fn translate_op(op: u8, addr: u16) {
         0xFF => "RST $38",
         _    => "Unknown op",
     };
-    println!("<0x{:04X}> 0x{:02X}: {}", addr, op, op_str);
+    println!("<0x{:04X}> 0x{:02X}: {} Next: {:02X} {:02X}", addr, op, op_str, z80.mmu.rb(z80.r.pc), z80.mmu.rb(z80.r.pc + 1));
 }
 
 pub fn translate_cb(op: u8, addr: u16) {

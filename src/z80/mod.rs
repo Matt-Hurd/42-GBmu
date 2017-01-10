@@ -105,7 +105,7 @@ impl Z80 {
 
     pub fn do_op(&mut self, op: u8) {
         if op != 0xCB && self.debug {
-            debug::translate_op(op, self.r.pc);
+            debug::translate_op(op, self.r.pc, self);
         }
         match op {
             0x00    => ops::misc::nop(self),
