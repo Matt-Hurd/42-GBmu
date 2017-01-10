@@ -12,3 +12,4 @@ pub mod rotate;
 pub mod ret;
 pub mod sbc;
 pub mod sub;
+pub mod and;

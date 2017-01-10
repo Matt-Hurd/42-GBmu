@@ -62,6 +62,10 @@ impl Z80Registers {
         ((self.d as u16) << 8) + (self.e as u16)
     }
 
+    pub fn get_af(&mut self) -> u16 {
+        ((self.a as u16) << 8) + (self.f as u16)
+    }
+
     pub fn set_hl(&mut self, value: u16) {
         self.h = (value >> 8) as u8;
         self.l = (value & 255) as u8;

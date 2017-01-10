@@ -172,7 +172,7 @@ impl GPU {
                 if self.mode_clock >= 51 {
                     self.mode_clock = 0;
                     self.ly += 1;
-                    if self.ly == 143 {
+                    if self.ly >= 143 {
                         self.stat.mode = 1;
                     } else {
                         self.stat.mode = 3;
@@ -213,7 +213,7 @@ impl GPU {
                 }
             }
             let mut pixel = fifo.pop_front().unwrap();
-            if pixel != 0 {
+            if pixel != 0 && self.ly < 144 {
             // if pixel != 0 {
                 // println!("{:02X}", pixel);
                 self.screen[((self.ly as u32) * 160 + (x as u32)) as usize] = 0x000000;

@@ -3,6 +3,7 @@ use z80::ops::helpers;
 
 pub fn adc_a_hl(z80: &mut Z80) {
     let (sum, overflow) = z80.r.a.overflowing_add(z80.mmu.rb(z80.r.get_hl()));
+    z80.r.clear_flags();
     if overflow {
         z80.r.set_carry(true);
     }

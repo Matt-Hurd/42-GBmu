@@ -28,9 +28,9 @@ fn frame(z80: &mut z80::Z80) {
     let mut paused = true;
     while {
         let mut input = "break".to_string();
-        if z80.debug && paused && false {
+        if z80.debug && paused {
             let mut stuck = true;
-            while stuck && paused
+            while stuck && paused && z80.r.pc > 0xf1
             {
                 let mut input = String::new();
         		io::stdin().read_line(&mut input)
@@ -45,11 +45,19 @@ fn frame(z80: &mut z80::Z80) {
             }
         }
         z80.step();
-        if z80.r.pc == 0x00FA {
-            // panic!("Reached the loop".to_string())
-            // z80.r.pc += 1; //Totally skipping the checksum, something is wrong
-            ;
-        }
+        // if z80.r.pc > 0x00FA {
+        //     panic!("Reached the loop".to_string())
+        //     // z80.r.pc += 1; //Totally skipping the checksum, something is wrong
+        // } else if z80.r.pc == 0x01B2 {
+        //     panic!("Reached the loop".to_string())
+        // } else if z80.r.pc >= 0x00F0 {
+        //     ;
+        //     z80.debug_r = true;
+        //     z80.debug = true;
+        //     // if z80.r.sp < 0xFFA0 {
+        //     //     panic!("Stack is pretty damn low");
+        //     // }
+        // }
         (z80.clock.t as u32) < fclk
     } {}
 }
@@ -64,8 +72,8 @@ fn main() {
 
     let mut core: z80::Z80 = z80::Z80::default();
     let result = core.mmu.load(path::PathBuf::from(&args[1]));
-    // core.debug = true;
-    // core.debug_r = true;
+        // core.debug = true;
+        // core.debug_r = true;
     match result {
         Ok(n) => println!("{}", n),
         Err(err) => println!("Error: {}", err),

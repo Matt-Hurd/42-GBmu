@@ -46,7 +46,7 @@ impl Default for MMU {
             rom: vec![],
             wram: vec![0; 8192],
             eram: vec![0; 32768],
-            zram: vec![0; 127],
+            zram: vec![0; 128],
             gpu: gpu::GPU::default(),
         }
     }

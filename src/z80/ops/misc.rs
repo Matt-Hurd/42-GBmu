@@ -1,13 +1,20 @@
 use z80::Z80;
 
-pub fn push_bc(z80: &mut Z80) {
+pub fn push(z80: &mut Z80, op: u8) {
     if z80.r.sp < 2 {
         panic!("Stack Underflow".to_string())
     }
+    let val = match op {
+        0xF5    => z80.r.get_af(),
+        0xC5    => z80.r.get_bc(),
+        0xD5    => z80.r.get_de(),
+        0xE5    => z80.r.get_hl(),
+        _       => 0,
+    };
     z80.r.sp -= 1;
-    z80.mmu.wb(z80.r.sp, z80.r.b);
+    z80.mmu.wb(z80.r.sp, ((val & 0xFF00) >> 8) as u8);
     z80.r.sp -= 1;
-    z80.mmu.wb(z80.r.sp, z80.r.c);
+    z80.mmu.wb(z80.r.sp, (val & 0xFF) as u8);
     z80.set_register_clock(3);
 }
 
@@ -56,11 +63,11 @@ pub fn inc(z80: &mut Z80, op: u8) {
         0x03 | 0x13 | 0x23 | 0x33   => 0xFFFF,
         _                           => 0xFF,
     };
-    z80.r.clear_flags();
     if val == cmp {
         z80.r.set_zero(true);
         val = 0;
     } else {
+        z80.r.set_zero(false);
         val += 1;
     }
     match op {
@@ -97,17 +104,18 @@ pub fn dec(z80: &mut Z80, op: u8) {
         0x3B    => z80.r.sp,
         _       => 0,
     };
-    z80.r.clear_flags();
     if val == 1 {
         z80.r.set_zero(true);
         val = 0;
     }
     else if val == 0 {
+        z80.r.set_zero(false);
         val = match op {
             0x05 | 0x15 | 0x25 | 0x35   => 0xFFFF,
             _                           => 0xFF,
         };
     } else {
+        z80.r.set_zero(false);
         val -= 1;
     }
     match op {
