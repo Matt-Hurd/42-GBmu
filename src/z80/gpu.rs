@@ -95,6 +95,8 @@ pub struct GPU {
     pub wy: u8,
     pub wx: u8,
     pub mode_clock: u16,
+    pub debug: bool,
+    pub debug_tile_data: [u32; 16 * 8 * 24 * 8],
 }
 
 impl Default for GPU {
@@ -116,6 +118,8 @@ impl Default for GPU {
             wy: 0,
             wx: 0,
             mode_clock: 0,
+            debug: true,
+            debug_tile_data: [0; 16 * 8 * 24 * 8],
         }
     }
 }
@@ -124,6 +128,23 @@ impl GPU {
     pub fn reset(&mut self) {
         for i in 0 .. 160 * 144 {
             self.screen[i] = 0;
+        }
+    }
+
+    pub fn debug_update_bg(&mut self) {
+        for y in 0 .. (24 * 8) {
+            for x in 0 .. (16 * 8) {
+                let mut tile = self.tiles[(x / 8 + (y / 8) * 16) as usize];
+                let mut top = tile[((y % 8) * 2) as usize];
+                let mut bottom = tile[((y % 8) * 2 + 1) as usize];
+                let mut pixel = if top & (0x80 >> (x % 8)) == 0 { 0x00 } else { 0x10 };
+                pixel |= if bottom & (0x80 >> (x % 8)) == 0 { 0x00 } else { 0x01 };
+                if pixel != 0 {
+                    self.debug_tile_data[(y * 16 * 8 + x) as usize] = 0x000000;
+                } else {
+                    self.debug_tile_data[(y * 16 * 8 + x) as usize] = 0xFFFFFF;
+                }
+            }
         }
     }
 
@@ -179,7 +200,7 @@ impl GPU {
         let bg_map_offset = if self.lcdc.bg_tile_map_address { 32 } else { 0 };
         let bg_tile_offset = if self.lcdc.bg_window_tile_data { 0 } else { 128 };
         for x in 0 .. 160 {
-            if fifo.len() <= 5 {
+            while fifo.len() <= 5 {
                 //Only handling background atm
                 for pixel_x in x + self.scx .. x + self.scx + 5 {
                     let mut tile_map = self.map[(start_y / 8 + bg_map_offset) as usize][(pixel_x / 8) as usize];
@@ -187,12 +208,13 @@ impl GPU {
                     let mut top = tile[((start_y % 8) * 2) as usize];
                     let mut bottom = tile[((start_y % 8) * 2 + 1) as usize];
                     let mut pixel = if top & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0x10 };
-                    pixel |= if bottom & (1 << (pixel_x % 8)) == 0 { 0x00 } else { 0x01 };
+                    pixel |= if bottom & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0x01 };
                     fifo.push_back(pixel);
                 }
             }
             let mut pixel = fifo.pop_front().unwrap();
             if pixel != 0 {
+            // if pixel != 0 {
                 // println!("{:02X}", pixel);
                 self.screen[((self.ly as u32) * 160 + (x as u32)) as usize] = 0x000000;
             } else {

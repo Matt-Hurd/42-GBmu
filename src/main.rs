@@ -74,7 +74,19 @@ fn main() {
     let mut window = match Window::new("GBmu", WIDTH, HEIGHT,
                                        WindowOptions {
                                            resize: false,
-                                           scale: Scale::X1,
+                                           scale: Scale::X4,
+                                           ..WindowOptions::default()
+                                       }) {
+        Ok(win) => win,
+        Err(err) => {
+            println!("Unable to create window {}", err);
+            return;
+        }
+    };
+    let mut debugWindow = match Window::new("tile_map", 16 * 8, 24 * 8,
+                                       WindowOptions {
+                                           resize: false,
+                                           scale: Scale::X4,
                                            ..WindowOptions::default()
                                        }) {
         Ok(win) => win,
@@ -85,6 +97,8 @@ fn main() {
     };
     loop {
         frame(&mut core);
+        core.mmu.gpu.debug_update_bg();
         window.update_with_buffer(&core.mmu.gpu.screen);
+        debugWindow.update_with_buffer(&core.mmu.gpu.debug_tile_data);
     }
 }
