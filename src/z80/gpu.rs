@@ -212,7 +212,7 @@ impl GPU {
     */
     //Ignoring clocks for now, not doing interweaved fetches
     pub fn render_scanline(&mut self) {
-        let start_y = (self.ly + self.scy) % 144;
+        let start_y = (self.ly + self.scy) % 255;
         let mut fifo: VecDeque<u8> = VecDeque::new();
         let bg_map_offset = if self.lcdc.bg_tile_map_address { 32 } else { 0 };
         let bg_tile_offset = if self.lcdc.bg_window_tile_data { 0 } else { 128 };
@@ -220,7 +220,7 @@ impl GPU {
             while fifo.len() <= 5 {
                 //Only handling background atm
                 for pixel_x in x + self.scx .. x + self.scx + 5 {
-                    let tile_map = self.map[(start_y / 8 + bg_map_offset) as usize][((pixel_x % 160) / 8) as usize];
+                    let tile_map = self.map[(start_y / 8 + bg_map_offset) as usize][((pixel_x % 255) / 8) as usize];
                     let tile = self.tiles[(bg_tile_offset + tile_map) as usize];
                     let top = tile[((start_y % 8) * 2) as usize];
                     let bottom = tile[((start_y % 8) * 2 + 1) as usize];

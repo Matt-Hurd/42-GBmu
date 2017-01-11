@@ -185,7 +185,7 @@ impl MMU {
 
     pub fn load(&mut self, filename: path::PathBuf) -> Result<String, Box<Error>> {
         File::open(&filename).and_then(|mut f| f.read_to_end(&mut self.rom))
-            .map_err(|_| "Could not read ROM")?;;
+            .map_err(|_| "Could not read ROM")?;
         Ok("Good".to_string())
     }
 }

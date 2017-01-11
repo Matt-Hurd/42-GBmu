@@ -4,7 +4,7 @@ mod mmu;
 mod ops;
 mod registers;
 mod gpu;
-mod debug;
+pub mod debug;
 
 /*
 ** Z80 and MMU implementation largely ported from http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
@@ -71,9 +71,6 @@ impl Z80 {
 
     pub fn do_cb(&mut self) {
         let op = self.mmu.rb(self.r.pc);
-        if self.debug {
-            debug::translate_cb(op, self.r.pc);
-        }
         self.r.pc += 1;
         match op {
             0x46 => ops::bit::bit(self, op),
@@ -157,18 +154,9 @@ impl Z80 {
             0x05 => ops::rotate::rl_r(self, op),
             _       => ops::misc::unimplemented_cb(self, op),
         }
-        if self.debug_r {
-            self.r.debug_print();
-            self.debug_print_cpu_time();
-            self.debug_print_stack();
-            println!("");
-        }
     }
 
     pub fn do_op(&mut self, op: u8) {
-        if op != 0xCB && self.debug {
-            debug::translate_op(op, self.r.pc, self);
-        }
         match op {
             0x00    => ops::misc::nop(self),
             0x3C    => ops::misc::inc_r(self, op),
@@ -256,18 +244,18 @@ impl Z80 {
             0x73    => ops::ld::ld_u8_r_r(self, op),
             0x74    => ops::ld::ld_u8_r_r(self, op),
             0x17    => ops::rotate::rl_r(self, op),
-            0x35    => ops::misc::dec(self, op),
-            0x3d    => ops::misc::dec(self, op),
-            0x05    => ops::misc::dec(self, op),
-            0x0B    => ops::misc::dec(self, op),
-            0x0D    => ops::misc::dec(self, op),
-            0x15    => ops::misc::dec(self, op),
-            0x1B    => ops::misc::dec(self, op),
-            0x1D    => ops::misc::dec(self, op),
-            0x25    => ops::misc::dec(self, op),
-            0x2B    => ops::misc::dec(self, op),
-            0x2D    => ops::misc::dec(self, op),
-            0x3B    => ops::misc::dec(self, op),
+            0x3D    => ops::misc::dec_r(self, op),
+            0x05    => ops::misc::dec_r(self, op),
+            0x0D    => ops::misc::dec_r(self, op),
+            0x15    => ops::misc::dec_r(self, op),
+            0x1D    => ops::misc::dec_r(self, op),
+            0x25    => ops::misc::dec_r(self, op),
+            0x2D    => ops::misc::dec_r(self, op),
+            0x0B    => ops::misc::dec_rr(self, op),
+            0x1B    => ops::misc::dec_rr(self, op),
+            0x2B    => ops::misc::dec_rr(self, op),
+            0x3B    => ops::misc::dec_rr(self, op),
+            0x35    => ops::misc::dec_hl(self),
             0xD8    => ops::ret::ret(self, op),
             0xD0    => ops::ret::ret(self, op),
             0xC0    => ops::ret::ret(self, op),
@@ -373,12 +361,6 @@ impl Z80 {
             0xF2    => ops::ld::ld_a_c(self),
             0xFA    => ops::ld::ld_a_nn(self),
             _       => ops::misc::unimplemented_op(self, op),
-        }
-        if op != 0xCB && self.debug_r {
-            self.r.debug_print();
-            self.debug_print_cpu_time();
-            self.debug_print_stack();
-            println!("");
         }
     }
 
