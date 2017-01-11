@@ -1,3 +1,4 @@
+src/z80/ops/ld_old.rs
 .*
 target
 roms

@@ -134,9 +134,9 @@ impl GPU {
     pub fn debug_update_bg(&mut self) {
         for y in 0 .. (24 * 8) {
             for x in 0 .. (16 * 8) {
-                let mut tile = self.tiles[(x / 8 + (y / 8) * 16) as usize];
-                let mut top = tile[((y % 8) * 2) as usize];
-                let mut bottom = tile[((y % 8) * 2 + 1) as usize];
+                let tile = self.tiles[(x / 8 + (y / 8) * 16) as usize];
+                let top = tile[((y % 8) * 2) as usize];
+                let bottom = tile[((y % 8) * 2 + 1) as usize];
                 let mut pixel = if top & (0x80 >> (x % 8)) == 0 { 0x00 } else { 0x10 };
                 pixel |= if bottom & (0x80 >> (x % 8)) == 0 { 0x00 } else { 0x01 };
                 if pixel != 0 {
@@ -207,16 +207,16 @@ impl GPU {
             while fifo.len() <= 5 {
                 //Only handling background atm
                 for pixel_x in x + self.scx .. x + self.scx + 5 {
-                    let mut tile_map = self.map[(start_y / 8 + bg_map_offset) as usize][(pixel_x / 8) as usize];
-                    let mut tile = self.tiles[(bg_tile_offset + tile_map) as usize];
-                    let mut top = tile[((start_y % 8) * 2) as usize];
-                    let mut bottom = tile[((start_y % 8) * 2 + 1) as usize];
+                    let tile_map = self.map[(start_y / 8 + bg_map_offset) as usize][(pixel_x / 8) as usize];
+                    let tile = self.tiles[(bg_tile_offset + tile_map) as usize];
+                    let top = tile[((start_y % 8) * 2) as usize];
+                    let bottom = tile[((start_y % 8) * 2 + 1) as usize];
                     let mut pixel = if top & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0x10 };
                     pixel |= if bottom & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0x01 };
                     fifo.push_back(pixel);
                 }
             }
-            let mut pixel = fifo.pop_front().unwrap();
+            let pixel = fifo.pop_front().unwrap();
             if pixel != 0 && self.ly < 144 {
             // if pixel != 0 {
                 // println!("{:02X}", pixel);

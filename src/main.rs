@@ -27,7 +27,6 @@ fn frame(z80: &mut z80::Z80) {
     let fclk = z80.clock.t as u32 + 70224;
     let mut paused = true;
     while {
-        let mut input = "break".to_string();
         if z80.debug && paused && false {
             let mut stuck = true;
             while stuck && paused
@@ -91,7 +90,7 @@ fn main() {
             return;
         }
     };
-    let mut debugWindow = match Window::new("tile_map", 16 * 8, 24 * 8,
+    let mut tile_window = match Window::new("tile_map", 16 * 8, 24 * 8,
                                        WindowOptions {
                                            resize: false,
                                            scale: Scale::X4,
@@ -107,6 +106,6 @@ fn main() {
         frame(&mut core);
         core.mmu.gpu.debug_update_bg();
         window.update_with_buffer(&core.mmu.gpu.screen);
-        debugWindow.update_with_buffer(&core.mmu.gpu.debug_tile_data);
+        tile_window.update_with_buffer(&core.mmu.gpu.debug_tile_data);
     }
 }

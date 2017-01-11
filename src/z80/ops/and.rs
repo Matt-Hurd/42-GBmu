@@ -1,5 +1,4 @@
 use z80::Z80;
-use std::num::Wrapping;
 
 /*
 ** AND r|$xx|(hl)
