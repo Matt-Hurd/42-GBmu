@@ -1,5 +1,12 @@
 use z80::Z80;
 
+/*
+** CALL cc, $aabb
+** Condition Bits: ____
+** Clocks:
+**   cc true: 5
+**   cc false: 3
+*/
 pub fn call(z80: &mut Z80, op: u8) {
     z80.set_register_clock(3);
     z80.r.pc += 2;

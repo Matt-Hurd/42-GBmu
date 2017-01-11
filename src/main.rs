@@ -11,12 +11,12 @@ const HEIGHT: usize = 144;
 
 mod z80;
 
-fn reset(z80: &mut z80::Z80) {
+fn reset(z80: &mut z80::Z80, rom_path: path::PathBuf) {
     z80.mmu.gpu.reset();
     z80.mmu.reset();
     z80.reset();
 
-    let result = z80.mmu.load(path::PathBuf::from("roms/opus5.gb"));
+    let result = z80.mmu.load(rom_path);
     match result {
         Ok(n) => (println!("{}", n)),
         Err(err) => println!("Error: {}", err),
@@ -30,7 +30,7 @@ fn frame(z80: &mut z80::Z80) {
         let mut input = "break".to_string();
         if z80.debug && paused {
             let mut stuck = true;
-            while stuck && paused && z80.r.pc > 0xf1
+            while stuck && paused
             {
                 let mut input = String::new();
         		io::stdin().read_line(&mut input)
@@ -45,15 +45,15 @@ fn frame(z80: &mut z80::Z80) {
             }
         }
         z80.step();
-        // if z80.r.pc > 0x00FA {
+        // if z80.r.pc >= 0xA0 {
         //     panic!("Reached the loop".to_string())
         //     // z80.r.pc += 1; //Totally skipping the checksum, something is wrong
         // } else if z80.r.pc == 0x01B2 {
         //     panic!("Reached the loop".to_string())
         // } else if z80.r.pc >= 0x00F0 {
         //     ;
-        //     z80.debug_r = true;
-        //     z80.debug = true;
+            // z80.debug_r = true;
+            // z80.debug = true;
         //     // if z80.r.sp < 0xFFA0 {
         //     //     panic!("Stack is pretty damn low");
         //     // }
@@ -78,7 +78,7 @@ fn main() {
         Ok(n) => println!("{}", n),
         Err(err) => println!("Error: {}", err),
     }
-    reset(&mut core);
+    reset(&mut core, path::PathBuf::from(&args[1]));
     let mut window = match Window::new("GBmu", WIDTH, HEIGHT,
                                        WindowOptions {
                                            resize: false,

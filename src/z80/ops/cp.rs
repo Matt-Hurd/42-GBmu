@@ -1,7 +1,13 @@
 use z80::Z80;
 
+
 /*
-** CP (register, (HL), $xx)
+** CP r|(hl)|$xx
+** Condition Bits: R1RR
+** Clocks:
+**   r: 1
+**   (hl): 2
+**   $xx: 2
 */
 pub fn cp_r(z80: &mut Z80, op: u8) {
     let cmp = match op {
@@ -27,5 +33,10 @@ pub fn cp_r(z80: &mut Z80, op: u8) {
     if z80.r.a < cmp {
         z80.r.set_carry(true);
     }
-    z80.set_register_clock(1);
+    //Half carry somehow?
+    if op == 0xBE || op == 0xFE {
+        z80.set_register_clock(2);
+    } else {
+        z80.set_register_clock(1);
+    }
 }

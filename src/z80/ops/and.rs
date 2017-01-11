@@ -1,6 +1,14 @@
 use z80::Z80;
 use std::num::Wrapping;
 
+/*
+** AND r|$xx|(hl)
+** Condition Bits: r010
+** Clocks:
+**    r: 1
+**    $xx: 2
+**    (hl): 2
+*/
 pub fn and(z80: &mut Z80, op: u8) {
     let val = match op {
         0xE6    => {
@@ -18,9 +26,16 @@ pub fn and(z80: &mut Z80, op: u8) {
         _       => 0,
     };
     z80.r.clear_flags();
+    z80.r.set_half_carry(true);
     z80.r.a &= val;
     if z80.r.a == 0 {
         z80.r.set_zero(true);
+    } else {
+        z80.r.set_zero(false);
     }
-    z80.set_register_clock(1);
+    if op == 0xA6 || op == 0xE6 {
+        z80.set_register_clock(2);
+    } else {
+        z80.set_register_clock(1);
+    }
 }

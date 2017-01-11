@@ -193,6 +193,10 @@ impl GPU {
         }
     }
 
+    /*
+    ** TODO: Curently overlapping them and having tile 0 always be the top left of the section
+    ** Tile 0 of set #2 needs to be the bottom left
+    */
     //Ignoring clocks for now, not doing interweaved fetches
     pub fn render_scanline(&mut self) {
         let start_y = self.ly + self.scy;
