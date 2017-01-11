@@ -1,6 +1,12 @@
 use z80::Z80;
 
-// load from register into register (or value hl is pointing to)
+/*
+** LD r|(HL), r|(HL)
+** Condition Bits: ____
+** Clocks:
+**   (hl): 2
+**   r, r: 1
+*/
 pub fn ld_u8_r_r(z80: &mut Z80, op: u8) {
     let val = match op & 0xF {
         0x7 | 0xF   => z80.r.a,
@@ -25,7 +31,11 @@ pub fn ld_u8_r_r(z80: &mut Z80, op: u8) {
         0x7 => z80.r.a = val,
         _   => (),
     }
-    z80.set_register_clock(1);
+    if op & 0xF == 0x6 || op & 0xF == 0xE || (op & 0x38) >> 3 == 0x6 {
+        z80.set_register_clock(1);
+    } else {
+        z80.set_register_clock(1);
+    }
 }
 
 pub fn ld_i_on_a(z80: &mut Z80) {
@@ -35,8 +45,12 @@ pub fn ld_i_on_a(z80: &mut Z80) {
     z80.set_register_clock(2);
 }
 
+
 /*
-** LD (16bits), (16bits)
+** LD ($aabb)|sp|hl, $aabb|sp|hl|de
+** Condition Bits: ____
+** Clocks:
+** TODO: Fix timing
 */
 pub fn ld_u16(z80: &mut Z80, op: u8) {
     let val = match op & 0xF {
@@ -64,7 +78,10 @@ pub fn ld_u16(z80: &mut Z80, op: u8) {
 }
 
 /*
-** LD A, pointer
+** LD A, bc|de|hl|($aabb)|($aa)|(C)|(HL-)|(HL+)
+** Condition Bits: ____
+** Clocks:
+** TODO: Fix timing
 */
 pub fn ld_a_p(z80: &mut Z80, op: u8) {
     let val = match op {
@@ -96,7 +113,10 @@ pub fn ld_a_p(z80: &mut Z80, op: u8) {
 }
 
 /*
-** LD pointer, A
+** LD bc|de|hl|(C)|(HL-)|(HL+), A
+** Condition Bits: ____
+** Clocks:
+** TODO: Fix timing
 */
 pub fn ld_p_a(z80: &mut Z80, op: u8) {
     match op {
@@ -127,6 +147,9 @@ pub fn ld_p_a(z80: &mut Z80, op: u8) {
 
 /*
 ** LD r, $xx
+** Condition Bits: ____
+** Clocks:
+** TODO: Fix timing
 */
 pub fn ld_r_xx(z80: &mut Z80, op: u8) {
     let val = z80.mmu.rb(z80.r.pc);
@@ -150,6 +173,7 @@ pub fn ld_r_xx(z80: &mut Z80, op: u8) {
 
 /*
 ** LD ($aabb), A
+** TODO: Cleanup
 */
 pub fn ld_aabb_a(z80: &mut Z80, op: u8) {
     let dest = z80.mmu.rw(z80.r.pc);
@@ -160,6 +184,7 @@ pub fn ld_aabb_a(z80: &mut Z80, op: u8) {
 
 /*
 ** LD ($aabb), SP
+** TODO: Cleanup
 */
 pub fn ld_aabb_sp(z80: &mut Z80, op: u8) {
     let dest = z80.mmu.rw(z80.r.pc);

@@ -1,5 +1,12 @@
 use z80::Z80;
 
+/*
+** JR cc, $aa
+** Condition Bits: ____
+** Clocks:
+**   cc true: 3
+**   cc false: 2
+*/
 pub fn jr_u8(z80: &mut Z80, op: u8) {
     let i = z80.mmu.rb(z80.r.pc);
     z80.r.pc += 1;
@@ -23,6 +30,14 @@ pub fn jr_u8(z80: &mut Z80, op: u8) {
     }
 }
 
+/*
+** JP cc, $aabb|(HL)
+** Condition Bits: ____
+** Clocks:
+**   (hl): 1
+**   cc true: 3
+**   cc false: 2
+*/
 pub fn jp_u16(z80: &mut Z80, op: u8) {
     let mut i = 0;
     if op != 0xE9 {
@@ -37,11 +52,14 @@ pub fn jp_u16(z80: &mut Z80, op: u8) {
         0xD2 => z80.r.get_carry() == 0,
         0xC2 => z80.r.get_zero() == 0,
         0xCA => z80.r.get_zero() == 1,
-        _    => false,
+        _    => true,
     };
     if case {
         z80.r.pc = i;
         z80.set_register_clock(3);
+    }
+    else if op == 0xE9 {
+        z80.set_register_clock(1);
     } else {
         z80.set_register_clock(2);
     }

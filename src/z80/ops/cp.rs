@@ -1,6 +1,5 @@
 use z80::Z80;
 
-
 /*
 ** CP r|(hl)|$xx
 ** Condition Bits: R1RR
