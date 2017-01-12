@@ -67,7 +67,7 @@ pub fn ld_hl_n(z80: &mut Z80) {
 ** Clocks: 4
 */
 pub fn ld_nn_a(z80: &mut Z80) {
-    let addr = z80.mmu.rw(z80.r.pc) as u16;
+    let addr = z80.mmu.rw(z80.r.pc);
     z80.r.pc += 2;
     z80.mmu.wb(addr, z80.r.a);
     z80.set_register_clock(4);
@@ -208,12 +208,12 @@ pub fn ld_rr_nn(z80: &mut Z80, op: u8) {
 */
 pub fn ldd_hl(z80: &mut Z80, op: u8) {
     let hl = z80.r.get_hl();
-    z80.r.set_hl((Wrapping(hl) - Wrapping(1)).0);
     if op == 0x3A {
         z80.r.a = z80.mmu.rb(z80.r.get_hl());
     } else {
         z80.mmu.wb(z80.r.get_hl(), z80.r.a);
     }
+    z80.r.set_hl((Wrapping(hl) - Wrapping(1)).0);
     z80.set_register_clock(2);
 }
 

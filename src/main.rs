@@ -23,11 +23,11 @@ fn reset(z80: &mut z80::Z80, rom_path: path::PathBuf) {
     }
 }
 
-fn frame(z80: &mut z80::Z80, debugger: &mut debugger::simple_debug::Debugger) {
+fn frame(z80: &mut z80::Z80, debugger: &mut debugger::simple_debug::Debugger, mut debug_window: &mut Window) {
     let fclk = z80.clock.t as u32 + 70224;
     let mut paused = true;
     while {
-        debugger.step(z80);
+        debugger.step(z80, &mut debug_window);
         z80.step();
         (z80.clock.t as u32) < fclk
     } {}
@@ -75,7 +75,7 @@ fn main() {
     let mut debugger = debugger::simple_debug::Debugger::default();
     debugger.enable(&mut core);
     loop {
-        frame(&mut core, &mut debugger);
+        frame(&mut core, &mut debugger, &mut tile_window);
         core.mmu.gpu.debug_update_bg();
         window.update_with_buffer(&core.mmu.gpu.screen);
         tile_window.update_with_buffer(&core.mmu.gpu.debug_tile_data);

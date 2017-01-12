@@ -1,11 +1,13 @@
 use z80;
 use std::io;
 use std::i64;
+use minifb::{Window, Key, Scale, WindowOptions};
 
 pub struct Debugger {
     pub enabled: bool,
     pub stopped: bool,
     pub breakpoints: Vec<u16>,
+    pub skip: u16,
 }
 
 impl Default for Debugger {
@@ -14,6 +16,7 @@ impl Default for Debugger {
             enabled: false,
             stopped: true,
             breakpoints: vec![],
+            skip: 0,
         }
     }
 }
@@ -26,8 +29,19 @@ impl Debugger {
         self.stopped = true;
     }
 
-    pub fn print_debug(&mut self, z80: &mut z80::Z80, manual: bool) {
+    pub fn print_map_info(&mut self, z80: &mut z80::Z80) {
+        for y in 0 .. 64 {
+            for x in 0 .. 32 {
+                print!("{:02X} ", z80.mmu.gpu.map[y][x]);
+            }
+            println!("");
+        }
+    }
+
+    pub fn print_debug(&mut self, z80: &mut z80::Z80, manual: bool, debug_window: &mut Window) {
         if manual || z80.debug {
+            // z80.mmu.gpu.debug_update_bg();
+            // debug_window.update_with_buffer(&z80.mmu.gpu.debug_tile_data);
             let op = z80.mmu.rb(z80.r.pc);
             if manual || z80.debug_r {
                 z80.r.debug_print();
@@ -43,20 +57,31 @@ impl Debugger {
         }
     }
 
-    pub fn check_breakpoints(&mut self, z80: &mut z80::Z80) {
+    pub fn print_breakpoints(&mut self) {
+        println!("Breakpoints:");
         for point in 0 .. self.breakpoints.len() {
-            if z80.r.pc == self.breakpoints[point] {
-                self.stopped = true;
-                println!("Hit breakpoint set at 0x{:04X}", z80.r.pc);
-            }
+            println!("  0x{:04X}", self.breakpoints[point]);
         }
     }
 
-    pub fn step(&mut self, z80: &mut z80::Z80) {
+    pub fn check_breakpoints(&mut self, z80: &mut z80::Z80) {
+        for point in 0 .. self.breakpoints.len() {
+            if z80.r.pc == self.breakpoints[point] {
+                if self.skip == 0 {
+                    self.stopped = true;
+                } else {
+                    self.skip -= 1;
+                }
+                println!("Hit breakpoint set at 0x{:04X}", z80.r.pc);
+                }
+            }
+        }
+
+    pub fn step(&mut self, z80: &mut z80::Z80, window: &mut Window) {
         if self.enabled {
             let mut done = false;
             self.check_breakpoints(z80);
-            self.print_debug(z80, false);
+            self.print_debug(z80, false, window);
             while self.stopped && !done {
                 let mut input = String::new();
                 io::stdin().read_line(&mut input)
@@ -65,7 +90,7 @@ impl Debugger {
                 if line == "" || line == "step" {
                     done = true;
                 }
-                if line == "continue" || line == "run" {
+                if line == "continue" || line == "run"{
                     self.stopped = false;
                 }
                 if line == "dro" || line == "disable_r" {
@@ -81,7 +106,13 @@ impl Debugger {
                     z80.debug = true;
                 }
                 if line == "r" {
-                    self.print_debug(z80, true);
+                    self.print_debug(z80, true, window);
+                }
+                if line == "b" {
+                    self.print_breakpoints();
+                }
+                if line == "print map" {
+                    self.print_map_info(z80);
                 }
                 let split = line.split(" ").collect::<Vec<&str>>();
                 if split[0] == "break" {
@@ -94,6 +125,34 @@ impl Debugger {
                                     self.breakpoints.push(n);
                                 },
                                 Err(err)    => println!("Invalid breakpoint {}", split[point]),
+                            }
+                        }
+                    }
+                }
+                if split[0] == "rmb" {
+                    if split.len() > 1 {
+                        for point in 1 .. split.len() {
+                            let val = u16::from_str_radix(split[point], 16);
+                            match val {
+                                Ok(n)       => {
+                                    println!("Removing breakpoint at 0x{:04X}", n);
+                                    self.breakpoints.retain(|&x| x != n);
+                                },
+                                Err(err)    => println!("Invalid breakpoint {}", split[point]),
+                            }
+                        }
+                    }
+                }
+                if split[0] == "skip" {
+                    if split.len() == 2 {
+                        for point in 1 .. split.len() {
+                            let val = u16::from_str_radix(split[point], 10);
+                            match val {
+                                Ok(n)       => {
+                                    println!("Skipping {} breakpoints", n);
+                                    self.skip = n;
+                                },
+                                Err(err)    => println!("Invalid Number: {}", split[point]),
                             }
                         }
                     }

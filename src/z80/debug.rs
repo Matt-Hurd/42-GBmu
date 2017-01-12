@@ -247,7 +247,7 @@ pub fn translate_op(op: u8, addr: u16, z80: &mut Z80) {
         0xFF => "RST $38",
         _    => "Unknown op",
     };
-    println!("<0x{:04X}> 0x{:02X}: {} Next: {:02X} {:02X}", addr, op, op_str, z80.mmu.rb(z80.r.pc), z80.mmu.rb(z80.r.pc + 1));
+    println!("<0x{:04X}> 0x{:02X}: {} Next: {:02X} {:02X}", addr, op, op_str, z80.mmu.rb(z80.r.pc + 1), z80.mmu.rb(z80.r.pc + 2));
 }
 
 pub fn translate_cb(op: u8, addr: u16) {
