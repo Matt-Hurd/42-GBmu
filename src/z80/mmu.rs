@@ -17,7 +17,8 @@ pub struct MMU {
     pub rom: Vec<u8>,
     pub wram: Vec<u8>,
     pub eram: Vec<u8>,
-    pub zram: Vec<u8>,
+    pub hram: Vec<u8>,
+    pub keys: u8,
     pub gpu: gpu::GPU,
 }
 
@@ -46,7 +47,8 @@ impl Default for MMU {
             rom: vec![],
             wram: vec![0; 8192],
             eram: vec![0; 32768],
-            zram: vec![0; 128],
+            hram: vec![0; 128],
+            keys: 0,
             gpu: gpu::GPU::default(),
         }
     }
@@ -64,10 +66,10 @@ impl MMU {
             self.eram[i] = 0;
         }
         for i in 0 .. 127 {
-            self.zram[i] = 0;
+            self.hram[i] = 0;
         }
     }
-    // Read 8-bit byte at addr
+    // TODO: Restructure
     pub fn rb(&mut self, addr: u16) -> u8 {
         match addr & 0xF000 {
             //BIOS
@@ -95,21 +97,21 @@ impl MMU {
                 match addr & 0x0F00 {
                     0xE00   => {
                         if addr < 0xFEA0 {
-                            return 0; //gpu.oam[addr & 0xFF]
+                            return self.gpu.roam((addr & 0xFF) as u8);
                         } else {
                             return 0;
                         }
                     },
                     _   => {
                         if addr >= 0xFF80 {
-                            return self.zram[(addr & 0x7F) as usize];
+                            return self.hram[(addr & 0x7F) as usize];
                         } else {
                             // I/O Control Handling
                             match addr & 0x00F0 {
                                 0x40 | 0x50 | 0x60 | 0x70   => {
                                     return self.gpu.rb(addr);
                                 },
-                                // Not handled *heh*
+                                0x00                        => return self.keys,
                                 _                           => return 0,
                             }
                         }
@@ -126,6 +128,9 @@ impl MMU {
     // Write 8-bit val at addr
     // Pretty much a copy of rb, should merge implementations
     pub fn wb(&mut self, addr: u16, val: u8) {
+        if addr == 0xFF46 {
+            println!("0x{:04X}", addr);
+        }
         match addr & 0xF000 {
             //BIOS
             0x0000                              => {
@@ -153,22 +158,21 @@ impl MMU {
             _                                   => {
                 match addr & 0x0F00 {
                     0xE00   => {
-                        if addr < 0xFEA0 {
-                            //gpu.oam[addr & 0xFF]
-                        } else {
-                        }
+                        if addr < 0xFEFF {
+                            self.gpu.woam((addr & 0xFF) as u8, val);
+                        } else { }
                     },
                     _   => {
                         if addr >= 0xFF80 {
-                            self.zram[(addr & 0x7F) as usize] = val;
+                            self.hram[(addr & 0x7F) as usize] = val;
                         } else {
                             // I/O Control Handling
                             match addr & 0x00F0 {
                                 0x40 | 0x50 | 0x60 | 0x70   => {
                                     self.gpu.wb(addr, val);
-                                },
-                                // Not handled *heh*
-                                _                           => (),
+                                }
+                                0x00                      => self.keys = val,
+                                _                         => (),
                             }
                         }
                     }

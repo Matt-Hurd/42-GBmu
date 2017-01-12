@@ -45,6 +45,29 @@ pub fn add_a(z80: &mut Z80, op: u8) {
 }
 
 /*
+** ADD SP, $xx
+** Condition Bits: 00RR
+** Clocks: 2
+*/
+pub fn add_sp_n(z80: &mut Z80) {
+    let val = z80.mmu.rb(z80.r.pc) as u16;
+    let sp = z80.r.sp;
+    z80.r.pc += 1;
+    z80.r.clear_flags();
+    z80.r.sp = (Wrapping(z80.r.sp) + Wrapping(val)).0;
+    if z80.r.sp == 0 {
+        z80.r.set_zero(true);
+    }
+    else if z80.r.sp < sp {
+        z80.r.set_carry(true);
+    }
+    if (z80.r.sp ^ val ^ sp) & 0x10 != 0 {
+        z80.r.set_half_carry(true);
+    }
+    z80.set_register_clock(2);
+}
+
+/*
 ** ADD hl, rr|sp
 ** Condition Bits: _0RR
 ** Clocks:

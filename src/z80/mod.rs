@@ -360,6 +360,7 @@ impl Z80 {
             0xF0    => ops::ld::ld_a_n(self),
             0xF2    => ops::ld::ld_a_c(self),
             0xFA    => ops::ld::ld_a_nn(self),
+            0xE8    => ops::add::add_sp_n(self),
             _       => ops::misc::unimplemented_op(self, op),
         }
     }

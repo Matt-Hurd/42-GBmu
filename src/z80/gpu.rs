@@ -82,6 +82,7 @@ pub struct GPU {
     pub screen: [u32; 160 * 144],
     pub tiles: [[u8; 16]; 384],
     pub map: [[u8; 32]; 64],
+    pub oam: [[u8; 4]; 40],
     pub lcdc: LCDC,
     pub stat: STAT,
     pub scy: u8,
@@ -105,6 +106,7 @@ impl Default for GPU {
             screen: [0; 160 * 144],
             tiles: [[0; 16]; 384],
             map: [[0; 32]; 64],
+            oam: [[0; 4]; 40],
             lcdc: LCDC::default(),
             stat: STAT::default(),
             scy: 0,
@@ -206,30 +208,75 @@ impl GPU {
         }
     }
 
-    /*
-    ** TODO: Curently overlapping them and having tile 0 always be the top left of the section
-    ** Tile 0 of set #2 needs to be the bottom left
-    */
+    pub fn get_sprite_pixel(&mut self, id: u8, y: u8, x: u8) -> u8 {
+        let tile = self.tiles[id as usize];
+        let top = tile[(y * 2) as usize];
+        let bottom = tile[(y * 2 + 1) as usize];
+        let mut pixel = if top & (0x80 >> (x % 8)) == 0 { 0x00 } else { 0b10 };
+        pixel |= if bottom & (0x80 >> (x % 8)) == 0 { 0x00 } else { 0b01 };
+        return pixel;
+    }
+
     //Ignoring clocks for now, not doing interweaved fetches
     pub fn render_scanline(&mut self) {
         let start_y = (self.ly + self.scy) % 255;
-        let mut fifo: VecDeque<u8> = VecDeque::new();
-        let bg_map_offset = if self.lcdc.bg_tile_map_address { 32 } else { 0 };
-        let bg_tile_offset = if self.lcdc.bg_window_tile_data { 0 } else { 128 };
+        let mut fifo: VecDeque<[u8; 2]> = VecDeque::new();
+        let map_number: usize = if self.lcdc.bg_tile_map_address {
+            (64 - start_y / 8) as usize
+        } else {
+            (start_y / 8) as usize
+        };
+        let mut sprites: Vec<usize> = Vec::new();
+        for sprite_num in 0 .. 40 {
+            if sprites.len() < 10
+            {
+                if self.oam[sprite_num][0] != 0 || self.oam[sprite_num][1] != 0 { //ensure it is on screen
+                    if self.oam[sprite_num][1] >= start_y && self.oam[sprite_num][1] + 8 < start_y {
+                        sprites.push(sprite_num);
+                    }
+                }
+            }
+        }
         for x in 0 .. 160 {
-            while fifo.len() <= 5 {
-                //Only handling background atm
+            while fifo.len() <= 8 {
                 for pixel_x in x + self.scx .. x + self.scx + 5 {
-                    let tile_map = self.map[(start_y / 8 + bg_map_offset) as usize][((pixel_x % 255) / 8) as usize];
-                    let tile = self.tiles[(bg_tile_offset + tile_map) as usize];
+                    let mut tile_map = self.map[map_number][((pixel_x % 255) / 8) as usize];
+                    if !self.lcdc.bg_window_tile_data {
+                        tile_map = 384 - tile_map;
+                    }
+                    let tile = self.tiles[tile_map as usize];
                     let top = tile[((start_y % 8) * 2) as usize];
                     let bottom = tile[((start_y % 8) * 2 + 1) as usize];
                     let mut pixel = if top & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b10 };
                     pixel |= if bottom & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b01 };
-                    fifo.push_back(pixel);
+                    fifo.push_back([pixel, 0]);
                 }
             }
-            let pixel = fifo.pop_front().unwrap();
+            for sprite_num in 0 .. sprites.len() {
+                let sprite = self.oam[sprites[sprite_num]];
+                if (sprite[0] < 8 && x == 0) || sprite[0] == x - 8 {
+                    let mut size = 8;
+                    let mut offset = 0;
+                    if sprite[0] < 8 {
+                        size = sprite[0];
+                        offset = 8 - size;
+                    }
+                    for x in 0 .. size {
+                        let sprite_pixel = self.get_sprite_pixel(sprite[2], sprite[1] - start_y, x - sprite[0] + 8);
+                        let mut replacement: VecDeque<[u8; 2]> = VecDeque::new();
+                        replacement.push_back(fifo.pop_front().unwrap());
+                        for y in 0 .. 8 {
+                            let item = replacement.pop_front().unwrap();
+                            if item[1] != 0 || (item[0] != 0 && sprite[3] & 0b10000000 == 0) {
+                                fifo.push_front(item);
+                            } else {
+                                fifo.push_front([sprite_pixel, x + 1]);
+                            }
+                        }
+                    }
+                }
+            }
+            let pixel = fifo.pop_front().unwrap()[0];
             self.screen[((self.ly as u32) * 160 + (x as u32)) as usize] = self.translate_bg_color(pixel);
         }
     }
@@ -281,8 +328,17 @@ impl GPU {
                 else if addr < 0x2000 {
                     let map_addr = addr % 0x1800;
                     self.map[(map_addr / 32) as usize][(map_addr % 32) as usize] = val;
+                } else {
                 }
             },
         }
+    }
+
+    pub fn woam(&mut self, addr: u8, val: u8) {
+        self.oam[(addr / 4) as usize][(addr % 4) as usize] = val;
+    }
+
+    pub fn roam(&mut self, addr: u8) -> u8 {
+        return self.oam[(addr / 4) as usize][(addr % 4) as usize];
     }
 }

@@ -75,6 +75,14 @@ fn main() {
     let mut debugger = debugger::simple_debug::Debugger::default();
     debugger.enable(&mut core);
     loop {
+        window.get_keys().map(|keys| {
+            for t in keys {
+                match t {
+                    Key::T => core.mmu.keys |= 0x14,
+                    _ => (),
+                }
+            }
+        });
         frame(&mut core, &mut debugger, &mut tile_window);
         core.mmu.gpu.debug_update_bg();
         window.update_with_buffer(&core.mmu.gpu.screen);
