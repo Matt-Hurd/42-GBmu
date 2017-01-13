@@ -217,6 +217,21 @@ impl GPU {
         return pixel;
     }
 
+    pub fn fill_fifo(&mut self, fifo: &mut VecDeque<[u8; 2]>, start_x: u8, count: u8, start_y: u8, map_number: usize) {
+        for pixel_x in start_x .. start_x + count {
+            let mut tile_map = self.map[map_number][((pixel_x % 255) / 8) as usize];
+            if !self.lcdc.bg_window_tile_data {
+                tile_map = 384 - tile_map;
+            }
+            let tile = self.tiles[tile_map as usize];
+            let top = tile[((start_y % 8) * 2) as usize];
+            let bottom = tile[((start_y % 8) * 2 + 1) as usize];
+            let mut pixel = if top & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b10 };
+            pixel |= if bottom & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b01 };
+            fifo.push_back([pixel, 0]);
+        }
+    }
+
     //Ignoring clocks for now, not doing interweaved fetches
     pub fn render_scanline(&mut self) {
         let start_y = (self.ly + self.scy) % 255;
@@ -226,56 +241,48 @@ impl GPU {
         } else {
             (start_y / 8) as usize
         };
-        let mut sprites: Vec<usize> = Vec::new();
-        for sprite_num in 0 .. 40 {
-            if sprites.len() < 10
-            {
-                if self.oam[sprite_num][0] != 0 || self.oam[sprite_num][1] != 0 { //ensure it is on screen
-                    if self.oam[sprite_num][1] >= start_y && self.oam[sprite_num][1] + 8 < start_y {
-                        sprites.push(sprite_num);
-                    }
-                }
-            }
-        }
+        let fifo_start = self.scx;
+        self.fill_fifo(&mut fifo, fifo_start, 16, start_y, map_number);
+        // let mut sprites: Vec<usize> = Vec::new();
+        // for sprite_num in 0 .. 40 {
+        //     if sprites.len() < 10
+        //     {
+        //         if self.oam[sprite_num][0] != 0 || self.oam[sprite_num][1] != 0 { //ensure it is on screen
+        //             if self.oam[sprite_num][1] >= start_y && self.oam[sprite_num][1] + 8 < start_y {
+        //                 sprites.push(sprite_num);
+        //             }
+        //         }
+        //     }
+        // }
         for x in 0 .. 160 {
             while fifo.len() <= 8 {
-                for pixel_x in x + self.scx .. x + self.scx + 5 {
-                    let mut tile_map = self.map[map_number][((pixel_x % 255) / 8) as usize];
-                    if !self.lcdc.bg_window_tile_data {
-                        tile_map = 384 - tile_map;
-                    }
-                    let tile = self.tiles[tile_map as usize];
-                    let top = tile[((start_y % 8) * 2) as usize];
-                    let bottom = tile[((start_y % 8) * 2 + 1) as usize];
-                    let mut pixel = if top & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b10 };
-                    pixel |= if bottom & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b01 };
-                    fifo.push_back([pixel, 0]);
-                }
+                let fifo_start = x + self.scx + 8;
+                self.fill_fifo(&mut fifo, fifo_start, 8, start_y, map_number);
             }
-            for sprite_num in 0 .. sprites.len() {
-                let sprite = self.oam[sprites[sprite_num]];
-                if (sprite[0] < 8 && x == 0) || sprite[0] == x - 8 {
-                    let mut size = 8;
-                    let mut offset = 0;
-                    if sprite[0] < 8 {
-                        size = sprite[0];
-                        offset = 8 - size;
-                    }
-                    for x in 0 .. size {
-                        let sprite_pixel = self.get_sprite_pixel(sprite[2], sprite[1] - start_y, x - sprite[0] + 8);
-                        let mut replacement: VecDeque<[u8; 2]> = VecDeque::new();
-                        replacement.push_back(fifo.pop_front().unwrap());
-                        for y in 0 .. 8 {
-                            let item = replacement.pop_front().unwrap();
-                            if item[1] != 0 || (item[0] != 0 && sprite[3] & 0b10000000 == 0) {
-                                fifo.push_front(item);
-                            } else {
-                                fifo.push_front([sprite_pixel, x + 1]);
-                            }
-                        }
-                    }
-                }
-            }
+            // for sprite_num in 0 .. sprites.len() {
+            //     let sprite = self.oam[sprites[sprite_num]];
+            //     if (sprite[0] < 8 && x == 0) || sprite[0] == x - 8 {
+            //         let mut size = 8;
+            //         let mut offset = 0;
+            //         if sprite[0] < 8 {
+            //             size = sprite[0];
+            //             offset = 8 - size;
+            //         }
+            //         for x in 0 .. size {
+            //             let sprite_pixel = self.get_sprite_pixel(sprite[2], sprite[1] - start_y, x - sprite[0] + 8);
+            //             let mut replacement: VecDeque<[u8; 2]> = VecDeque::new();
+            //             replacement.push_back(fifo.pop_front().unwrap());
+            //             for y in 0 .. 8 {
+            //                 let item = replacement.pop_front().unwrap();
+            //                 if item[1] != 0 || (item[0] != 0 && sprite[3] & 0b10000000 == 0) {
+            //                     fifo.push_front(item);
+            //                 } else {
+            //                     fifo.push_front([sprite_pixel, x + 1]);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
             let pixel = fifo.pop_front().unwrap()[0];
             self.screen[((self.ly as u32) * 160 + (x as u32)) as usize] = self.translate_bg_color(pixel);
         }
@@ -283,6 +290,11 @@ impl GPU {
 
     pub fn rb(&mut self, addr: u16) -> u8 {
         return match addr {
+            0x0000 ... 0x1800 => return self.tiles[(addr / 16) as usize][(addr % 16) as usize],
+            0x1800 ... 0x2000 => {
+                let map_addr = addr % 0x1800;
+                self.map[(map_addr / 32) as usize][(map_addr % 32) as usize]
+            }
             0xFF40  => self.lcdc.val,
             0xFF41  => self.stat.val,
             0xFF42  => self.scy,
@@ -295,20 +307,17 @@ impl GPU {
             0xFF49  => self.obp1,
             0xFF4A  => self.wy,
             0xFF4B  => self.wx,
-            _       => {
-                if addr < 0x1800 {
-                    self.tiles[(addr / 16) as usize][(addr % 16) as usize]
-                }
-                else if addr < 0x2000 {
-                    let map_addr = addr % 0x1800;
-                    self.map[(map_addr / 32) as usize][(map_addr % 32) as usize]
-                } else { 0 }
-            },
+            _       => return 0,
         }
     }
 
     pub fn wb(&mut self, addr: u16, val: u8) {
         match addr {
+            0x0000 ... 0x17FF => self.tiles[(addr / 16) as usize][(addr % 16) as usize] = val,
+            0x1800 ... 0x1FFF => {
+                let map_addr = addr % 0x1800;
+                self.map[(map_addr / 32) as usize][(map_addr % 32) as usize] = val;
+            }
             0xFF40  => self.lcdc.set(val),
             0xFF41  => self.stat.set(val),
             0xFF42  => self.scy = val,
@@ -321,16 +330,7 @@ impl GPU {
             0xFF49  => self.obp1 = val,
             0xFF4A  => self.wy = val,
             0xFF4B  => self.wx = val,
-            _       => {
-                if addr < 0x1800 {
-                    self.tiles[(addr / 16) as usize][(addr % 16) as usize] = val;
-                }
-                else if addr < 0x2000 {
-                    let map_addr = addr % 0x1800;
-                    self.map[(map_addr / 32) as usize][(map_addr % 32) as usize] = val;
-                } else {
-                }
-            },
+            _       => (),
         }
     }
 
