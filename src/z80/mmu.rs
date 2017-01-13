@@ -69,57 +69,42 @@ impl MMU {
             self.hram[i] = 0;
         }
     }
-    // TODO: Restructure
+
     pub fn rb(&mut self, addr: u16) -> u8 {
-        match addr & 0xF000 {
+        match addr {
             //BIOS
-            0x0000                              => {
-                if self.in_bios && addr < 0x0100 {
+            0x0000 ... 0x00FF  => {
+                if self.in_bios {
                     return self.bios[addr as usize];
                 } else {
                     return self.rom[addr as usize];
                 }
             },
             //ROM0
-            0x1000 | 0x2000 | 0x3000            => return self.rom[addr as usize],
+            0x00FF ... 0x3FFF   => return self.rom[addr as usize],
             //ROM1 (unbanked)
-            0x4000 | 0x5000 | 0x6000 | 0x7000   => return self.rom[addr as usize],
+            0x4000 ... 0x7FFF   => return self.rom[addr as usize],
             //VRAM
-            0x8000 | 0x9000                     => return self.gpu.rb(addr & 0x1FFF),
+            0x8000 ... 0x9FFF   => return self.gpu.rb(addr & 0x1FFF),
             //External RAM
-            0xA000 | 0xB000                     => return self.eram[(addr & 0x1FFF) as usize],
+            0xA000 ... 0xBFFF   => return self.eram[(addr & 0x1FFF) as usize],
             //Working RAM
-            0xC000 | 0xD000                     => return self.wram[(addr & 0x1FFF) as usize],
+            0xC000 ... 0xDFFF   => return self.wram[(addr & 0x1FFF) as usize],
             //Working RAM Shadow
-            0xE000                              => return self.wram[(addr & 0x1FFF) as usize],
+            0xE000 ... 0xEFFF   => return self.wram[(addr & 0x1FFF) as usize],
             // Working RAM shadow, I/O, Zero-page RAM
-            _                                   => {
-                match addr & 0x0F00 {
-                    0xE00   => {
-                        if addr < 0xFEA0 {
-                            return self.gpu.roam((addr & 0xFF) as u8);
-                        } else {
-                            return 0;
-                        }
-                    },
-                    _   => {
-                        if addr >= 0xFF80 {
-                            return self.hram[(addr & 0x7F) as usize];
-                        } else {
-                            // I/O Control Handling
-                            match addr & 0x00F0 {
-                                0x40 | 0x50 | 0x60 | 0x70   => {
-                                    return self.gpu.rb(addr);
-                                },
-                                0x00                        => return self.keys,
-                                _                           => return 0,
-                            }
-                        }
-                    }
-                };
-            },
+            0xF000 ... 0xFDFF   => return 0,
+            // OAM
+            0xFE00 ... 0xFE9F   => return self.gpu.roam((addr & 0xFF) as u8),
+            0xFEA0 ... 0xFEFF   => return 0,
+            //I/O
+            0xFF00 ... 0xFF7F   => return self.gpu.rb(addr),
+            //HRAM
+            0xFF80 ... 0xFFFF   => return self.hram[(addr & 0x7F) as usize],
+            _                   => return 0,
         };
     }
+
     // Read 16-bit word at addr
     pub fn rw(&mut self, addr: u16) -> u16 {
         return self.rb(addr) as u16 + ((self.rb(addr + 1) as u16) << 8);
@@ -128,56 +113,37 @@ impl MMU {
     // Write 8-bit val at addr
     // Pretty much a copy of rb, should merge implementations
     pub fn wb(&mut self, addr: u16, val: u8) {
-        if addr == 0xFF46 {
-            println!("0x{:04X}", addr);
-        }
-        match addr & 0xF000 {
+        match addr {
             //BIOS
-            0x0000                              => {
-                if self.in_bios && addr < 0x0100 {
+            0x0000 ... 0x00FF  => {
+                if self.in_bios {
                     self.bios[addr as usize] = val;
                 } else {
                     self.rom[addr as usize] = val;
                 }
             },
             //ROM0
-            0x1000 | 0x2000 | 0x3000            => self.rom[addr as usize] = val,
+            0x00FF ... 0x3FFF   => self.rom[addr as usize] = val,
             //ROM1 (unbanked)
-            0x4000 | 0x5000 | 0x6000 | 0x7000   => self.rom[addr as usize] = val,
+            0x4000 ... 0x7FFF   => self.rom[addr as usize] = val,
             //VRAM
-            0x8000 | 0x9000                     => {
-                self.gpu.wb(addr & 0x1FFF, val);
-            },
+            0x8000 ... 0x9FFF   => self.gpu.wb(addr & 0x1FFF, val),
             //External RAM
-            0xA000 | 0xB000                     => self.eram[(addr & 0x1FFF) as usize] = val,
+            0xA000 ... 0xBFFF   => self.eram[(addr & 0x1FFF) as usize] = val,
             //Working RAM
-            0xC000 | 0xD000                     => self.wram[(addr & 0x1FFF) as usize] = val,
+            0xC000 ... 0xDFFF   => self.wram[(addr & 0x1FFF) as usize] = val,
             //Working RAM Shadow
-            0xE000                              => self.wram[(addr & 0x1FFF) as usize] = val,
+            0xE000 ... 0xEFFF   => self.wram[(addr & 0x1FFF) as usize] = val,
             // Working RAM shadow, I/O, Zero-page RAM
-            _                                   => {
-                match addr & 0x0F00 {
-                    0xE00   => {
-                        if addr < 0xFEFF {
-                            self.gpu.woam((addr & 0xFF) as u8, val);
-                        } else { }
-                    },
-                    _   => {
-                        if addr >= 0xFF80 {
-                            self.hram[(addr & 0x7F) as usize] = val;
-                        } else {
-                            // I/O Control Handling
-                            match addr & 0x00F0 {
-                                0x40 | 0x50 | 0x60 | 0x70   => {
-                                    self.gpu.wb(addr, val);
-                                }
-                                0x00                      => self.keys = val,
-                                _                         => (),
-                            }
-                        }
-                    }
-                };
-            },
+            0xF000 ... 0xFDFF   => (),
+            // OAM
+            0xFE00 ... 0xFE9F   => self.gpu.woam((addr & 0xFF) as u8, val),
+            0xFEA0 ... 0xFEFF   => (),
+            //I/O
+            0xFF00 ... 0xFF7F   => self.gpu.wb(addr, val),
+            //HRAM
+            0xFF80 ... 0xFFFF   => self.hram[(addr & 0x7F) as usize] = val,
+            _                   => (),
         };
     }
 
