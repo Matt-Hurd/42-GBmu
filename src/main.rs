@@ -60,6 +60,7 @@ fn main() {
             return;
         }
     };
+    // let mut tile_window = match Window::new("tile_map", 16 * 8, 24 * 8,
     let mut tile_window = match Window::new("tile_map", 0, 0,
                                        WindowOptions {
                                            resize: false,
@@ -73,7 +74,7 @@ fn main() {
         }
     };
     let mut debugger = debugger::simple_debug::Debugger::default();
-    debugger.enable(&mut core);
+    // debugger.enable(&mut core);
     loop {
         core.mmu.keys[0] = 0xF;
         core.mmu.keys[1] = 0xF;
@@ -84,10 +85,10 @@ fn main() {
                     Key::Down => core.mmu.keys[1] &= 0b0111,
                     Key::Left => core.mmu.keys[1] &= 0b1101,
                     Key::Right => core.mmu.keys[1] &= 0b1110,
-                    Key::Z => core.mmu.keys[1] &= 0b1101, //B
-                    Key::X => core.mmu.keys[1] &= 0b1110, //A
-                    Key::Apostrophe => core.mmu.keys[1] &= 0b1011, //Select
-                    Key::Enter => core.mmu.keys[1] &= 0b0111, //Start
+                    Key::Z => core.mmu.keys[0] &= 0b1101, //B
+                    Key::X => core.mmu.keys[0] &= 0b1110, //A
+                    Key::Apostrophe => core.mmu.keys[0] &= 0b1011, //Select
+                    Key::Enter => core.mmu.keys[0] &= 0b0111, //Start
                     _ => (),
                 }
             }

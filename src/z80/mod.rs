@@ -411,6 +411,7 @@ impl Z80 {
         self.r.t = m * 4;
     }
 
+    //TODO: Ensure everything is being zero'd for GPU and MMU
     pub fn reset(&mut self) {
         self.r.a = 0;
         self.r.b = 0;

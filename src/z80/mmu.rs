@@ -20,6 +20,8 @@ pub struct MMU {
     pub hram: Vec<u8>,
     pub keys: [u8; 2],
     pub column: u8,
+    pub iflags: u8,
+    pub ienable: u8,
     pub gpu: gpu::GPU,
 }
 
@@ -51,6 +53,8 @@ impl Default for MMU {
             hram: vec![0; 128],
             keys: [0xF; 2],
             column: 0,
+            iflags: 0,
+            ienable: 0,
             gpu: gpu::GPU::default(),
         }
     }
@@ -108,9 +112,11 @@ impl MMU {
                 };
             },
             //More I/O?
+            0xFF0F              => return self.iflags,
             0xFF01 ... 0xFF7F   => return self.gpu.rb(addr),
             //HRAM
-            0xFF80 ... 0xFFFF   => return self.hram[(addr & 0x7F) as usize],
+            0xFF80 ... 0xFFFE   => return self.hram[(addr & 0x7F) as usize],
+            0xFFFF              => return self.ienable,
             _                   => return 0,
         };
     }
@@ -151,9 +157,11 @@ impl MMU {
             0xFEA0 ... 0xFEFF   => (),
             //I/O
             0xFF00              => self.column = val & 0b00110000,
+            0xFF0F              => self.iflags = val,
             0xFF01 ... 0xFF7F   => self.gpu.wb(addr, val),
             //HRAM
-            0xFF80 ... 0xFFFF   => self.hram[(addr & 0x7F) as usize] = val,
+            0xFF80 ... 0xFFFE   => self.hram[(addr & 0x7F) as usize] = val,
+            0xFFFF              => self.ienable = val,
             _                   => (),
         };
     }

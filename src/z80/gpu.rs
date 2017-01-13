@@ -231,6 +231,7 @@ impl GPU {
     //Ignoring clocks for now, not doing interweaved fetches
     pub fn render_scanline(&mut self) {
         let start_y = (self.ly + self.scy) % 255;
+        let line = self.ly;
         let mut fifo: VecDeque<[u8; 2]> = VecDeque::new();
         let map_number: usize = if self.lcdc.bg_tile_map_address {
             (64 - start_y / 8) as usize
@@ -239,47 +240,49 @@ impl GPU {
         };
         let fifo_start = self.scx;
         self.fill_fifo(&mut fifo, fifo_start, 16, start_y, map_number);
-        // let mut sprites: Vec<usize> = Vec::new();
-        // for sprite_num in 0 .. 40 {
-        //     if sprites.len() < 10
-        //     {
-        //         if self.oam[sprite_num][0] != 0 || self.oam[sprite_num][1] != 0 { //ensure it is on screen
-        //             if self.oam[sprite_num][1] >= start_y && self.oam[sprite_num][1] + 8 < start_y {
-        //                 sprites.push(sprite_num);
-        //             }
-        //         }
-        //     }
-        // }
+        let mut sprites: Vec<usize> = Vec::new();
+        for sprite_num in 0 .. 40 {
+            if sprites.len() < 10
+            {
+                if self.oam[sprite_num][0] != 0 || self.oam[sprite_num][1] != 0 { //ensure it is on screen
+                    if self.oam[sprite_num][0] > line && self.oam[sprite_num][0] <= line + 8 {
+                        sprites.push(sprite_num);
+                    }
+                }
+            }
+        }
         for x in 0 .. 160 {
             while fifo.len() <= 8 {
                 let fifo_start = x + self.scx + 8;
                 self.fill_fifo(&mut fifo, fifo_start, 8, start_y, map_number);
             }
-            // for sprite_num in 0 .. sprites.len() {
-            //     let sprite = self.oam[sprites[sprite_num]];
-            //     if (sprite[0] < 8 && x == 0) || sprite[0] == x - 8 {
-            //         let mut size = 8;
-            //         let mut offset = 0;
-            //         if sprite[0] < 8 {
-            //             size = sprite[0];
-            //             offset = 8 - size;
-            //         }
-            //         for x in 0 .. size {
-            // //           Not handling flipx or flipy
-            //             let sprite_pixel = self.get_tile_pixel(sprite[2], sprite[1] - start_y, x - sprite[0] + 8);
-            //             let mut replacement: VecDeque<[u8; 2]> = VecDeque::new();
-            //             replacement.push_back(fifo.pop_front().unwrap());
-            //             for y in 0 .. 8 {
-            //                 let item = replacement.pop_front().unwrap();
-            //                 if item[1] != 0 || (item[0] != 0 && sprite[3] & 0b10000000 == 0) {
-            //                     fifo.push_front(item);
-            //                 } else {
-            //                     fifo.push_front([sprite_pixel, x + 1]);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
+            for sprite_num in 0 .. sprites.len() {
+                let sprite = self.oam[sprites[sprite_num]];
+                if (sprite[1] < 8 && x == 0) || sprite[1] == x + 8 {
+                    let mut size = 8;
+                    if sprite[1] < 8 {
+                        size = sprite[1];
+                    }
+                    else if sprite[1] >= 160 - 8 {
+                        size = 160 - sprite[1];
+                    }
+                    let mut replacement: VecDeque<[u8; 2]> = VecDeque::new();
+                    for y in 0 .. size {
+            //           Not handling flipx or flipy
+                        replacement.push_front(fifo.pop_front().unwrap());
+                    }
+                    for y in 0 .. size {
+                        let item = replacement.pop_front().unwrap();
+                        if item[1] != 0 || (item[0] != 0 && sprite[3] & 0b10000000 == 0) {
+                            fifo.push_front(item);
+                        } else {
+                            // println!("sx: {} sy: {} | x:{} line:{}", sprite[1], sprite[0], x, line);
+                            let sprite_pixel = self.get_tile_pixel(sprite[2], (line + 8) - sprite[0], x - sprite[1] + y - 8);
+                            fifo.push_front([sprite_pixel, sprite_num as u8 + 1]);
+                        }
+                    }
+                }
+            }
             let pixel = fifo.pop_front().unwrap()[0];
             self.screen[((self.ly as u32) * 160 + (x as u32)) as usize] = self.translate_bg_color(pixel);
         }
