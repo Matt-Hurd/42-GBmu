@@ -60,7 +60,7 @@ fn main() {
             return;
         }
     };
-    let mut tile_window = match Window::new("tile_map", 16 * 8, 24 * 8,
+    let mut tile_window = match Window::new("tile_map", 0, 0,
                                        WindowOptions {
                                            resize: false,
                                            scale: Scale::X4,
@@ -75,10 +75,19 @@ fn main() {
     let mut debugger = debugger::simple_debug::Debugger::default();
     debugger.enable(&mut core);
     loop {
+        core.mmu.keys[0] = 0xF;
+        core.mmu.keys[1] = 0xF;
         window.get_keys().map(|keys| {
             for t in keys {
                 match t {
-                    Key::T => core.mmu.keys |= 0x14,
+                    Key::Up => core.mmu.keys[1] &= 0b1011,
+                    Key::Down => core.mmu.keys[1] &= 0b0111,
+                    Key::Left => core.mmu.keys[1] &= 0b1101,
+                    Key::Right => core.mmu.keys[1] &= 0b1110,
+                    Key::Z => core.mmu.keys[1] &= 0b1101, //B
+                    Key::X => core.mmu.keys[1] &= 0b1110, //A
+                    Key::Apostrophe => core.mmu.keys[1] &= 0b1011, //Select
+                    Key::Enter => core.mmu.keys[1] &= 0b0111, //Start
                     _ => (),
                 }
             }
@@ -86,6 +95,6 @@ fn main() {
         frame(&mut core, &mut debugger, &mut tile_window);
         core.mmu.gpu.debug_update_bg();
         window.update_with_buffer(&core.mmu.gpu.screen);
-        tile_window.update_with_buffer(&core.mmu.gpu.debug_tile_data);
+        // tile_window.update_with_buffer(&core.mmu.gpu.debug_tile_data);
     }
 }

@@ -48,7 +48,6 @@ pub fn ld_c_a(z80: &mut Z80) {
     z80.set_register_clock(2);
 }
 
-
 /*
 ** LD (HL), $xx
 ** Condition Bits: ____

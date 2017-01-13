@@ -45,3 +45,49 @@ pub fn rl_r(z80: &mut Z80, op: u8) {
         _   => (),
     }
 }
+
+/*
+** RR(C) register or (hl)
+*/
+pub fn rr_r(z80: &mut Z80, op: u8) {
+    let mut val = match op & 0xF {
+        0xE => z80.r.b,
+        0xF => z80.r.c,
+        0x8 => z80.r.d,
+        0x9 => z80.r.e,
+        0xA => z80.r.h,
+        0xB => z80.r.l,
+        0xC => z80.mmu.rb(z80.r.get_hl()),
+        0xD => z80.r.a,
+        _   => 0,
+    };
+    let extra = (val & 0b1);
+    val = (val & 0xFE) >> 1;
+    if op & 0xF0 != 1 {
+        val |= z80.r.get_carry() << 7;
+    } else {
+        val |= extra << 7;
+    }
+    z80.r.clear_flags();
+    if extra == 1 {
+        z80.r.set_carry(true);
+    }
+    if val == 0 {
+        z80.r.set_zero(true);
+    }
+    z80.set_register_clock(2);
+    match op & 0xF {
+        0xE => z80.r.b = val,
+        0xF => z80.r.c = val,
+        0x8 => z80.r.d = val,
+        0x9 => z80.r.e = val,
+        0xA => z80.r.h = val,
+        0xB => z80.r.l = val,
+        0xC => {
+            z80.mmu.wb(z80.r.get_hl(), val);
+            z80.set_register_clock(4);
+        },
+        0xD => z80.r.a = val,
+        _   => (),
+    }
+}

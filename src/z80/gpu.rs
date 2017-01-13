@@ -187,7 +187,7 @@ impl GPU {
                 if self.mode_clock >= 51 {
                     self.mode_clock = 0;
                     self.ly += 1;
-                    if self.ly >= 143 {
+                    if self.ly >= 144 {
                         self.stat.mode = 1;
                     } else {
                         self.stat.mode = 3;
@@ -208,7 +208,7 @@ impl GPU {
         }
     }
 
-    pub fn get_sprite_pixel(&mut self, id: u8, y: u8, x: u8) -> u8 {
+    pub fn get_tile_pixel(&mut self, id: u8, y: u8, x: u8) -> u8 {
         let tile = self.tiles[id as usize];
         let top = tile[(y * 2) as usize];
         let bottom = tile[(y * 2 + 1) as usize];
@@ -223,11 +223,7 @@ impl GPU {
             if !self.lcdc.bg_window_tile_data {
                 tile_map = 384 - tile_map;
             }
-            let tile = self.tiles[tile_map as usize];
-            let top = tile[((start_y % 8) * 2) as usize];
-            let bottom = tile[((start_y % 8) * 2 + 1) as usize];
-            let mut pixel = if top & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b10 };
-            pixel |= if bottom & (0x80 >> (pixel_x % 8)) == 0 { 0x00 } else { 0b01 };
+            let pixel = self.get_tile_pixel(tile_map, start_y % 8, pixel_x);
             fifo.push_back([pixel, 0]);
         }
     }
@@ -269,7 +265,8 @@ impl GPU {
             //             offset = 8 - size;
             //         }
             //         for x in 0 .. size {
-            //             let sprite_pixel = self.get_sprite_pixel(sprite[2], sprite[1] - start_y, x - sprite[0] + 8);
+            // //           Not handling flipx or flipy
+            //             let sprite_pixel = self.get_tile_pixel(sprite[2], sprite[1] - start_y, x - sprite[0] + 8);
             //             let mut replacement: VecDeque<[u8; 2]> = VecDeque::new();
             //             replacement.push_back(fifo.pop_front().unwrap());
             //             for y in 0 .. 8 {
@@ -290,7 +287,7 @@ impl GPU {
 
     pub fn rb(&mut self, addr: u16) -> u8 {
         return match addr {
-            0x0000 ... 0x1800 => return self.tiles[(addr / 16) as usize][(addr % 16) as usize],
+            0x0000 ... 0x17FF => return self.tiles[(addr / 16) as usize][(addr % 16) as usize],
             0x1800 ... 0x2000 => {
                 let map_addr = addr % 0x1800;
                 self.map[(map_addr / 32) as usize][(map_addr % 32) as usize]

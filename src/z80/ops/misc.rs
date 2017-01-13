@@ -51,6 +51,18 @@ pub fn nop(z80: &mut Z80) {
 }
 
 /*
+** CPL
+** Condition Bits: _11_
+** Clocks: 1
+*/
+pub fn cpl(z80: &mut Z80) {
+    z80.r.a ^= 0xFF;
+    z80.r.set_half_carry(true);
+    z80.r.set_subtract(true);
+    z80.set_register_clock(1);
+}
+
+/*
 ** INC (HL)
 ** Condition Bits: R0R_
 ** Clocks: 3
@@ -219,6 +231,35 @@ pub fn dec_rr(z80: &mut Z80, op: u8) {
     }
     z80.set_register_clock(2);
 }
+
+/*
+** SWAP A
+** Condition Bits: R000
+** Clocks:
+**   (hl): 4
+**   r: 2
+*/
+pub fn swap(z80: &mut Z80) {
+    let val = z80.r.a;
+    z80.r.clear_flags();
+    z80.r.set_zero(val == 0);
+    z80.r.a = (val & 0xF) << 4;
+    z80.r.a |= (val & 0xF0) >> 4;
+    z80.set_register_clock(2);
+}
+
+/*
+** SCF
+** Condition Bits: _001
+** Clocks: 1
+*/
+pub fn scf(z80: &mut Z80) {
+    z80.r.set_carry(true);
+    z80.r.set_half_carry(false);
+    z80.r.set_subtract(false);
+    z80.set_register_clock(1);
+}
+
 
 pub fn di(z80: &mut Z80) {
     z80.r.ime = 0;

@@ -54,7 +54,11 @@ pub fn add_sp_n(z80: &mut Z80) {
     let sp = z80.r.sp;
     z80.r.pc += 1;
     z80.r.clear_flags();
-    z80.r.sp = (Wrapping(z80.r.sp) + Wrapping(val)).0;
+    if val > 127 {
+        z80.r.sp = (Wrapping(z80.r.sp) - Wrapping(256 - val)).0;
+    } else {
+        z80.r.sp = (Wrapping(z80.r.sp) + Wrapping(val)).0;
+    }
     if z80.r.sp == 0 {
         z80.r.set_zero(true);
     }

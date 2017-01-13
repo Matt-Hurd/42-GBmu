@@ -18,7 +18,8 @@ pub struct MMU {
     pub wram: Vec<u8>,
     pub eram: Vec<u8>,
     pub hram: Vec<u8>,
-    pub keys: u8,
+    pub keys: [u8; 2],
+    pub column: u8,
     pub gpu: gpu::GPU,
 }
 
@@ -48,7 +49,8 @@ impl Default for MMU {
             wram: vec![0; 8192],
             eram: vec![0; 32768],
             hram: vec![0; 128],
-            keys: 0,
+            keys: [0xF; 2],
+            column: 0,
             gpu: gpu::GPU::default(),
         }
     }
@@ -98,7 +100,15 @@ impl MMU {
             0xFE00 ... 0xFE9F   => return self.gpu.roam((addr & 0xFF) as u8),
             0xFEA0 ... 0xFEFF   => return 0,
             //I/O
-            0xFF00 ... 0xFF7F   => return self.gpu.rb(addr),
+            0xFF00              => {
+                match self.column {
+                    0x10 => return self.keys[0],
+                    0x20 => return self.keys[1],
+                    _    => return 0xF,
+                };
+            },
+            //More I/O?
+            0xFF01 ... 0xFF7F   => return self.gpu.rb(addr),
             //HRAM
             0xFF80 ... 0xFFFF   => return self.hram[(addr & 0x7F) as usize],
             _                   => return 0,
@@ -140,7 +150,8 @@ impl MMU {
             0xFE00 ... 0xFE9F   => self.gpu.woam((addr & 0xFF) as u8, val),
             0xFEA0 ... 0xFEFF   => (),
             //I/O
-            0xFF00 ... 0xFF7F   => self.gpu.wb(addr, val),
+            0xFF00              => self.column = val & 0b00110000,
+            0xFF01 ... 0xFF7F   => self.gpu.wb(addr, val),
             //HRAM
             0xFF80 ... 0xFFFF   => self.hram[(addr & 0x7F) as usize] = val,
             _                   => (),
