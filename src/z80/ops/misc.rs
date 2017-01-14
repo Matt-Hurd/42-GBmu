@@ -261,6 +261,7 @@ pub fn scf(z80: &mut Z80) {
 }
 
 pub fn int_handle(z80: &mut Z80, addr: u16) {
+    z80.backup_registers();
     z80.r.ime = false;
     z80.r.sp -= 2;
     z80.mmu.ww(z80.r.sp, z80.r.pc);
@@ -269,6 +270,7 @@ pub fn int_handle(z80: &mut Z80, addr: u16) {
 }
 
 pub fn rst(z80: &mut Z80, op: u8) {
+    z80.backup_registers();
     let addr = match op {
         0xC7    => 0x0000,
         0xCF    => 0x0008,

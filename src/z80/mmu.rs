@@ -101,9 +101,7 @@ impl MMU {
             //Working RAM
             0xC000 ... 0xDFFF   => return self.wram[(addr & 0x1FFF) as usize],
             //Working RAM Shadow
-            0xE000 ... 0xEFFF   => return self.wram[(addr & 0x1FFF) as usize],
-            // Working RAM shadow, I/O, Zero-page RAM
-            0xF000 ... 0xFDFF   => return 0,
+            0xE000 ... 0xFDFF   => return self.wram[(addr & 0x1FFF) as usize],
             // OAM
             0xFE00 ... 0xFE9F   => return self.gpu.roam((addr & 0xFF) as u8),
             0xFEA0 ... 0xFEFF   => return 0,
@@ -153,10 +151,7 @@ impl MMU {
             //Working RAM
             0xC000 ... 0xDFFF   => self.wram[(addr & 0x1FFF) as usize] = val,
             //Working RAM Shadow
-            0xE000 ... 0xEFFF   => self.wram[(addr & 0x1FFF) as usize] = val,
-            // Working RAM shadow, I/O, Zero-page RAM
-            0xF000 ... 0xFDFF   => (),
-            // OAM
+            0xE000 ... 0xFDFF   => self.wram[(addr & 0x1FFF) as usize] = val,
             0xFE00 ... 0xFE9F   => self.gpu.woam((addr & 0xFF) as u8, val),
             0xFEA0 ... 0xFEFF   => (),
             //I/O
@@ -167,7 +162,7 @@ impl MMU {
             0xFF40 ... 0xFF7F   => self.gpu.wb(addr, val),
             //HRAM
             0xFF80 ... 0xFFFE   => self.hram[(addr & 0x7F) as usize] = val,
-            0xFFFF              => {println!("Enableing ie {}", val);self.ienable = val},
+            0xFFFF              => {self.ienable = val; println!("Enabling interrupts {:05b}", val)},
             _                   => (),
         };
     }

@@ -26,6 +26,7 @@ impl Default for Z80Clock {
 pub struct Z80 {
     pub clock: Z80Clock,
     pub r: registers::Z80Registers,
+    pub backup_r: registers::Z80Registers,
     pub mmu: mmu::MMU,
     pub debug: bool,
     pub debug_r: bool,
@@ -37,6 +38,7 @@ impl Default for Z80 {
             clock: Z80Clock::default(),
             mmu: mmu::MMU::default(),
             r: registers::Z80Registers::default(),
+            backup_r: registers::Z80Registers::default(),
             debug: false,
             debug_r: false,
         }
@@ -44,6 +46,28 @@ impl Default for Z80 {
 }
 
 impl Z80 {
+    pub fn backup_registers(&mut self) {
+        self.backup_r.a = self.r.a;
+        self.backup_r.b = self.r.b;
+        self.backup_r.c = self.r.c;
+        self.backup_r.d = self.r.d;
+        self.backup_r.e = self.r.e;
+        self.backup_r.f = self.r.f;
+        self.backup_r.h = self.r.h;
+        self.backup_r.l = self.r.l;
+    }
+
+    pub fn restore_registers(&mut self) {
+            self.r.a = self.backup_r.a;
+            self.r.b = self.backup_r.b;
+            self.r.c = self.backup_r.c;
+            self.r.d = self.backup_r.d;
+            self.r.e = self.backup_r.e;
+            self.r.f = self.backup_r.f;
+            self.r.h = self.backup_r.h;
+            self.r.l = self.backup_r.l;
+    }
+
     pub fn debug_print_cpu_time(&mut self) {
         println!("CPU mtime: {}", self.clock.m);
     }
@@ -74,23 +98,23 @@ impl Z80 {
         if (self.r.ime && self.mmu.iflags != 0) {
             let interrupts = self.mmu.ienable & self.mmu.iflags;
             if interrupts & 0b00001 != 0 {
-                self.mmu.ienable &= 0b11110;
+                self.mmu.iflags &= 0b11110;
                 ops::misc::int_handle(self, 0x40);
             }
             if interrupts & 0b00010 != 0 {
-                self.mmu.ienable &= 0b11101;
+                self.mmu.iflags &= 0b11101;
                 ops::misc::int_handle(self, 0x48);
             }
             if interrupts & 0b00100 != 0 {
-                self.mmu.ienable &= 0b11011;
+                self.mmu.iflags &= 0b11011;
                 ops::misc::int_handle(self, 0x50);
             }
             if interrupts & 0b01000 != 0 {
-                self.mmu.ienable &= 0b10111;
+                self.mmu.iflags &= 0b10111;
                 ops::misc::int_handle(self, 0x58);
             }
             if interrupts & 0b10000 != 0 {
-                self.mmu.ienable &= 0b01111;
+                self.mmu.iflags &= 0b01111;
                 ops::misc::int_handle(self, 0x60);
             }
             self.clock.m = (Wrapping(self.clock.m) + Wrapping(self.r.m as u32)).0;
@@ -261,6 +285,22 @@ impl Z80 {
             0x0B => ops::rotate::rr_r(self, op),
             0x0C => ops::rotate::rr_r(self, op),
             0x0D => ops::rotate::rr_r(self, op),
+            0x3E => ops::rotate::srl(self, op),
+            0x3F => ops::rotate::srl(self, op),
+            0x38 => ops::rotate::srl(self, op),
+            0x39 => ops::rotate::srl(self, op),
+            0x3A => ops::rotate::srl(self, op),
+            0x3B => ops::rotate::srl(self, op),
+            0x3C => ops::rotate::srl(self, op),
+            0x3D => ops::rotate::srl(self, op),
+            0x26 => ops::rotate::sla(self, op),
+            0x27 => ops::rotate::sla(self, op),
+            0x20 => ops::rotate::sla(self, op),
+            0x21 => ops::rotate::sla(self, op),
+            0x22 => ops::rotate::sla(self, op),
+            0x23 => ops::rotate::sla(self, op),
+            0x24 => ops::rotate::sla(self, op),
+            0x25 => ops::rotate::sla(self, op),
             0x37 => ops::misc::swap(self),
             _       => ops::misc::unimplemented_cb(self, op),
         }
