@@ -298,6 +298,17 @@ pub fn ei(z80: &mut Z80) {
     z80.set_register_clock(1);
 }
 
+//Apparently CGB mode doesn't skip an extra op
+pub fn halt(z80: &mut Z80) {
+    if z80.r.ime {
+        z80.halted = true;
+    } else {
+        z80.r.pc += 1;
+        z80.step();
+        z80.r.pc -= 1;
+    }
+}
+
 pub fn unimplemented_op(op: u8) {
     panic!(format!("Unimplemented op 0x{:X}", op))
 }

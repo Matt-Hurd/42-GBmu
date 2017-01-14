@@ -30,6 +30,7 @@ pub struct Z80 {
     pub mmu: mmu::MMU,
     pub debug: bool,
     pub debug_r: bool,
+    pub halted: bool,
 }
 
 impl Default for Z80 {
@@ -41,6 +42,7 @@ impl Default for Z80 {
             backup_r: registers::Z80Registers::default(),
             debug: false,
             debug_r: false,
+            halted: false,
         }
     }
 }
@@ -81,15 +83,17 @@ impl Z80 {
     }
 
     pub fn step(&mut self) {
-        let op = self.mmu.rb(self.r.pc);
-        self.r.pc += 1;
-        self.do_op(op);
-        self.r.pc &= 0xFFFF;
-        if self.r.pc == 0x0100 {
-            self.mmu.in_bios = false;
+        if !self.halted {
+            let op = self.mmu.rb(self.r.pc);
+            self.r.pc += 1;
+            self.do_op(op);
+            self.r.pc &= 0xFFFF;
+            if self.r.pc == 0x0100 {
+                self.mmu.in_bios = false;
+            }
+            self.clock.m = (Wrapping(self.clock.m) + Wrapping(self.r.m as u32)).0;
+            self.clock.t = (Wrapping(self.clock.t) + Wrapping(self.r.t as u32)).0;
         }
-        self.clock.m = (Wrapping(self.clock.m) + Wrapping(self.r.m as u32)).0;
-        self.clock.t = (Wrapping(self.clock.t) + Wrapping(self.r.t as u32)).0;
         if self.mmu.gpu.step(self.r.m) {
             self.mmu.iflags |= 0b00001;
         } else {
@@ -546,6 +550,7 @@ impl Z80 {
             0xEF    => ops::misc::rst(self, op),
             0xF7    => ops::misc::rst(self, op),
             0xFF    => ops::misc::rst(self, op),
+            0x76    => ops::misc::halt(self),
             _       => ops::misc::unimplemented_op(op),
         }
     }
