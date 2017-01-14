@@ -219,13 +219,13 @@ impl GPU {
         return pixel;
     }
 
-    pub fn fill_fifo(&mut self, fifo: &mut VecDeque<[u8; 2]>, start_x: u8, count: u8, start_y: u8, map_number: usize) {
-        for pixel_x in start_x .. start_x + count {
+    pub fn fill_fifo(&mut self, fifo: &mut VecDeque<[u8; 2]>, start_x: u16, count: u8, start_y: u8, map_number: usize) {
+        for pixel_x in start_x .. start_x + count as u16 {
             let mut tile_map = self.map[map_number][((pixel_x % 255) / 8) as usize];
             if !self.lcdc.bg_window_tile_data {
                 tile_map = (384 - tile_map as u16) as u8;
             }
-            let pixel = self.get_tile_pixel(tile_map, start_y % 8, pixel_x);
+            let pixel = self.get_tile_pixel(tile_map, start_y % 8, (pixel_x % 255) as u8);
             fifo.push_back([pixel, 0]);
         }
     }
@@ -240,7 +240,7 @@ impl GPU {
         } else {
             (start_y / 8) as usize
         };
-        let fifo_start = self.scx;
+        let fifo_start = self.scx as u16;
         self.fill_fifo(&mut fifo, fifo_start, 16, start_y, map_number);
         let mut sprites: Vec<usize> = Vec::new();
         for sprite_num in 0 .. 40 {
@@ -255,7 +255,7 @@ impl GPU {
         }
         for x in 0 .. 160 {
             while fifo.len() <= 8 {
-                let fifo_start = x + self.scx + 8;
+                let fifo_start = (x + self.scx + 8) as u16;
                 self.fill_fifo(&mut fifo, fifo_start, 8, start_y, map_number);
             }
             for sprite_num in 0 .. sprites.len() {
@@ -286,7 +286,6 @@ impl GPU {
                 }
             }
             let pixel = fifo.pop_front().unwrap()[0];
-            // println!("LY: {}", self.ly);
             self.screen[((self.ly as u32) * 160 + (x as u32)) as usize] = self.translate_bg_color(pixel);
         }
     }
@@ -318,6 +317,7 @@ impl GPU {
         match addr {
             0x0000 ... 0x17FF => self.tiles[(addr / 16) as usize][(addr % 16) as usize] = val,
             0x1800 ... 0x1FFF => {
+                // println!("Addr {:X} {:X}", addr, val);
                 let map_addr = addr % 0x1800;
                 self.map[(map_addr / 32) as usize][(map_addr % 32) as usize] = val;
             }

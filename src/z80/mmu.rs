@@ -115,7 +115,9 @@ impl MMU {
             },
             //More I/O?
             0xFF0F              => return self.iflags,
-            0xFF01 ... 0xFF7F   => return self.gpu.rb(addr),
+            //Serial Transfer (Used for Blargg's tests)
+            0xFF01              => return 0,
+            0xFF02 ... 0xFF7F   => return self.gpu.rb(addr),
             //HRAM
             0xFF80 ... 0xFFFE   => return self.hram[(addr & 0x7F) as usize],
             0xFFFF              => return self.ienable,
@@ -156,6 +158,8 @@ impl MMU {
             0xFEA0 ... 0xFEFF   => (),
             //I/O
             0xFF00              => self.column = val & 0b00110000,
+            //Serial Transfer (Used for Blargg's tests)
+            0xFF01              => print!("{}", val as char),
             0xFF0F              => self.iflags = val,
             //Sound I/O
             0xFF10 ... 0xFF3F   => (),
