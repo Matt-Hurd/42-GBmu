@@ -39,13 +39,16 @@ pub fn jr_u8(z80: &mut Z80, op: u8) {
 **   cc false: 2
 */
 pub fn jp_u16(z80: &mut Z80, op: u8) {
-    let mut i = 0;
-    if op != 0xE9 {
-        i = z80.mmu.rw(z80.r.pc);
+
+    let i = match op {
+        0xE9 => {
+            z80.mmu.rw(z80.r.get_hl())
+        },
+        _   => {
         z80.r.pc += 2;
-    } else {
-        i = z80.mmu.rw(z80.r.get_hl());
-    }
+        z80.mmu.rw(z80.r.pc - 2)
+        }
+    };
     let case = match op {
         0xC3 => true,
         0xDA => z80.r.get_carry() == 1,

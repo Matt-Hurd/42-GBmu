@@ -95,7 +95,7 @@ impl Z80 {
         } else {
             self.mmu.iflags &= 0b11110;
         }
-        if (self.r.ime && self.mmu.iflags != 0) {
+        if self.r.ime && self.mmu.iflags != 0 {
             let interrupts = self.mmu.ienable & self.mmu.iflags;
             if interrupts & 0b00001 != 0 {
                 self.mmu.iflags &= 0b11110;
@@ -302,13 +302,14 @@ impl Z80 {
             0x24 => ops::rotate::sla(self, op),
             0x25 => ops::rotate::sla(self, op),
             0x37 => ops::misc::swap(self),
-            _       => ops::misc::unimplemented_cb(self, op),
+            _       => ops::misc::unimplemented_cb(op),
         }
     }
 
     pub fn do_op(&mut self, op: u8) {
         match op {
             0x00    => ops::misc::nop(self),
+            0x08    => ops::ld::ld_nn_sp(self),
             0x3C    => ops::misc::inc_r(self, op),
             0x04    => ops::misc::inc_r(self, op),
             0x34    => ops::misc::inc_hl(self),
@@ -545,7 +546,7 @@ impl Z80 {
             0xEF    => ops::misc::rst(self, op),
             0xF7    => ops::misc::rst(self, op),
             0xFF    => ops::misc::rst(self, op),
-            _       => ops::misc::unimplemented_op(self, op),
+            _       => ops::misc::unimplemented_op(op),
         }
     }
 

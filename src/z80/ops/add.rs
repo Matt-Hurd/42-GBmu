@@ -11,7 +11,7 @@ use std::num::Wrapping;
 */
 pub fn add_a(z80: &mut Z80, op: u8) {
     let a = z80.r.a;
-    let mut val = match op {
+    let val = match op {
         0xC6    => {
             z80.r.pc += 1;
             z80.mmu.rb(z80.r.pc - 1)
@@ -79,7 +79,7 @@ pub fn add_sp_n(z80: &mut Z80) {
 */
 pub fn add_hl(z80: &mut Z80, op: u8) {
     let hl = z80.r.get_hl();
-    let mut val = match op {
+    let val = match op {
         0x09    => z80.r.get_bc(),
         0x19    => z80.r.get_de(),
         0x29    => z80.r.get_hl(),

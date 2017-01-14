@@ -223,7 +223,7 @@ impl GPU {
         for pixel_x in start_x .. start_x + count {
             let mut tile_map = self.map[map_number][((pixel_x % 255) / 8) as usize];
             if !self.lcdc.bg_window_tile_data {
-                tile_map = 384 - tile_map;
+                tile_map = (384 - tile_map as u16) as u8;
             }
             let pixel = self.get_tile_pixel(tile_map, start_y % 8, pixel_x);
             fifo.push_back([pixel, 0]);

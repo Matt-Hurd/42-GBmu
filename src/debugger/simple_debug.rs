@@ -1,7 +1,5 @@
 use z80;
 use std::io;
-use std::i64;
-use minifb::{Window, Key, Scale, WindowOptions};
 
 pub struct Debugger {
     pub enabled: bool,
@@ -38,10 +36,9 @@ impl Debugger {
         }
     }
 
-    pub fn print_debug(&mut self, z80: &mut z80::Z80, manual: bool, debug_window: &mut Window) {
+    pub fn print_debug(&mut self, z80: &mut z80::Z80, manual: bool) {
         if manual || z80.debug {
             // z80.mmu.gpu.debug_update_bg();
-            // debug_window.update_with_buffer(&z80.mmu.gpu.debug_tile_data);
             let op = z80.mmu.rb(z80.r.pc);
             if manual || z80.debug_r {
                 z80.r.debug_print();
@@ -78,11 +75,11 @@ impl Debugger {
             }
         }
 
-    pub fn step(&mut self, z80: &mut z80::Z80, window: &mut Window) {
+    pub fn step(&mut self, z80: &mut z80::Z80) {
         if self.enabled {
             let mut done = false;
             self.check_breakpoints(z80);
-            self.print_debug(z80, false, window);
+            self.print_debug(z80, false);
             // if z80.r.pc >= 0x2AE0 || z80.r.sp < 0xFF00 {
             //     self.stopped = true;
             // }
@@ -110,7 +107,7 @@ impl Debugger {
                     z80.debug = true;
                 }
                 if line == "r" {
-                    self.print_debug(z80, true, window);
+                    self.print_debug(z80, true);
                 }
                 if line == "b" {
                     self.print_breakpoints();

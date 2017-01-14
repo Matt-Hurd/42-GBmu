@@ -298,10 +298,10 @@ pub fn ei(z80: &mut Z80) {
     z80.set_register_clock(1);
 }
 
-pub fn unimplemented_op(z80: &mut Z80, op: u8) {
+pub fn unimplemented_op(op: u8) {
     panic!(format!("Unimplemented op 0x{:X}", op))
 }
 
-pub fn unimplemented_cb(z80: &mut Z80, op: u8) {
+pub fn unimplemented_cb(op: u8) {
     panic!(format!("Unimplemented op 0xCB 0x{:X}", op))
 }

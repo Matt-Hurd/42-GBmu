@@ -61,7 +61,7 @@ pub fn rr_r(z80: &mut Z80, op: u8) {
         0xD => z80.r.a,
         _   => 0,
     };
-    let extra = (val & 0b1);
+    let extra = val & 0b1;
     val = (val & 0xFE) >> 1;
     if op & 0xF0 != 1 {
         val |= z80.r.get_carry() << 7;
@@ -107,7 +107,7 @@ pub fn srl(z80: &mut Z80, op: u8) {
         0xF => z80.r.a,
         _   => 0,
     };
-    let extra = (val & 0b1);
+    let extra = val & 0b1;
     val = (val & 0xFE) >> 1;
     z80.r.clear_flags();
     if extra == 1 {
@@ -149,7 +149,7 @@ pub fn sla(z80: &mut Z80, op: u8) {
         0xF => z80.r.a,
         _   => 0,
     };
-    let extra = (val & 0b10000000);
+    let extra = val & 0b10000000;
     val = (val & 0b01111111) << 1;
     z80.r.clear_flags();
     if extra != 0 {

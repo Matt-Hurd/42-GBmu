@@ -3,7 +3,7 @@ use std::num::Wrapping;
 
 pub fn sub(z80: &mut Z80, op: u8) {
     let a = z80.r.a;
-    let mut val = match op {
+    let val = match op {
         0xD6    => {
             z80.r.pc += 1;
             z80.mmu.rb(z80.r.pc - 1)

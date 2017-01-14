@@ -23,11 +23,10 @@ fn reset(z80: &mut z80::Z80, rom_path: path::PathBuf) {
     }
 }
 
-fn frame(z80: &mut z80::Z80, debugger: &mut debugger::simple_debug::Debugger, mut debug_window: &mut Window) {
+fn frame(z80: &mut z80::Z80, debugger: &mut debugger::simple_debug::Debugger) {
     let fclk = z80.clock.t as u32 + 70224;
-    let mut paused = true;
     while {
-        debugger.step(z80, &mut debug_window);
+        debugger.step(z80);
         z80.step();
         (z80.clock.t as u32) < fclk
     } {}
@@ -60,19 +59,18 @@ fn main() {
             return;
         }
     };
-    // let mut tile_window = match Window::new("tile_map", 16 * 8, 24 * 8,
-    let mut tile_window = match Window::new("tile_map", 0, 0,
-                                       WindowOptions {
-                                           resize: false,
-                                           scale: Scale::X4,
-                                           ..WindowOptions::default()
-                                       }) {
-        Ok(win) => win,
-        Err(err) => {
-            println!("Unable to create window {}", err);
-            return;
-        }
-    };
+    // let tile_window = match Window::new("tile_map", 16 * 8, 24 * 8,
+    //                                    WindowOptions {
+    //                                        resize: false,
+    //                                        scale: Scale::X4,
+    //                                        ..WindowOptions::default()
+    //                                    }) {
+    //     Ok(win) => win,
+    //     Err(err) => {
+    //         println!("Unable to create window {}", err);
+    //         return;
+    //     }
+    // };
     let mut debugger = debugger::simple_debug::Debugger::default();
     // debugger.enable(&mut core);
     loop {
@@ -99,7 +97,7 @@ fn main() {
         if old_keys1 != core.mmu.keys[0] || old_keys2 != core.mmu.keys[1] {
             core.mmu.iflags &= 0b10000;
         }
-        frame(&mut core, &mut debugger, &mut tile_window);
+        frame(&mut core, &mut debugger);
         core.mmu.gpu.debug_update_bg();
         window.update_with_buffer(&core.mmu.gpu.screen);
         // tile_window.update_with_buffer(&core.mmu.gpu.debug_tile_data);
