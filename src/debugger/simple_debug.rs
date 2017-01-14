@@ -45,6 +45,7 @@ impl Debugger {
             let op = z80.mmu.rb(z80.r.pc);
             if manual || z80.debug_r {
                 z80.r.debug_print();
+                z80.mmu.debug_print();
                 z80.debug_print_cpu_time();
                 // z80.debug_print_stack();
             }
@@ -82,9 +83,9 @@ impl Debugger {
             let mut done = false;
             self.check_breakpoints(z80);
             self.print_debug(z80, false, window);
-            if z80.r.pc >= 0x2AE0 || z80.r.sp < 0xFF00 {
-                self.stopped = true;
-            }
+            // if z80.r.pc >= 0x2AE0 || z80.r.sp < 0xFF00 {
+            //     self.stopped = true;
+            // }
             while self.stopped && !done {
                 let mut input = String::new();
                 io::stdin().read_line(&mut input)

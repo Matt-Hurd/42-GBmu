@@ -2,7 +2,7 @@ use z80::Z80;
 use std::num::Wrapping;
 
 /*
-** ADC A, (hl)
+** ADC A, (hl)|n|r
 ** Condition Bits: R0RR
 ** Clocks:
 **   n: 2

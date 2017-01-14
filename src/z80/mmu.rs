@@ -61,6 +61,10 @@ impl Default for MMU {
 }
 
 impl MMU {
+    pub fn debug_print(&mut self) {
+        println!("  if: {:08b}", self.iflags);
+        println!("  ie: {:08b}", self.ienable);
+    }
 
     pub fn reset(&mut self) {
         self.in_bios = true;
@@ -158,10 +162,12 @@ impl MMU {
             //I/O
             0xFF00              => self.column = val & 0b00110000,
             0xFF0F              => self.iflags = val,
-            0xFF01 ... 0xFF7F   => self.gpu.wb(addr, val),
+            //Sound I/O
+            0xFF10 ... 0xFF3F   => (),
+            0xFF40 ... 0xFF7F   => self.gpu.wb(addr, val),
             //HRAM
             0xFF80 ... 0xFFFE   => self.hram[(addr & 0x7F) as usize] = val,
-            0xFFFF              => self.ienable = val,
+            0xFFFF              => {println!("Enableing ie {}", val);self.ienable = val},
             _                   => (),
         };
     }

@@ -66,7 +66,36 @@ impl Z80 {
         }
         self.clock.m = (Wrapping(self.clock.m) + Wrapping(self.r.m as u32)).0;
         self.clock.t = (Wrapping(self.clock.t) + Wrapping(self.r.t as u32)).0;
-        self.mmu.gpu.step(self.r.m);
+        if self.mmu.gpu.step(self.r.m) {
+            self.mmu.iflags |= 0b00001;
+        } else {
+            self.mmu.iflags &= 0b11110;
+        }
+        if (self.r.ime && self.mmu.iflags != 0) {
+            let interrupts = self.mmu.ienable & self.mmu.iflags;
+            if interrupts & 0b00001 != 0 {
+                self.mmu.ienable &= 0b11110;
+                ops::misc::int_handle(self, 0x40);
+            }
+            if interrupts & 0b00010 != 0 {
+                self.mmu.ienable &= 0b11101;
+                ops::misc::int_handle(self, 0x48);
+            }
+            if interrupts & 0b00100 != 0 {
+                self.mmu.ienable &= 0b11011;
+                ops::misc::int_handle(self, 0x50);
+            }
+            if interrupts & 0b01000 != 0 {
+                self.mmu.ienable &= 0b10111;
+                ops::misc::int_handle(self, 0x58);
+            }
+            if interrupts & 0b10000 != 0 {
+                self.mmu.ienable &= 0b01111;
+                ops::misc::int_handle(self, 0x60);
+            }
+            self.clock.m = (Wrapping(self.clock.m) + Wrapping(self.r.m as u32)).0;
+            self.clock.t = (Wrapping(self.clock.t) + Wrapping(self.r.t as u32)).0;
+        }
     }
 
     pub fn do_cb(&mut self) {
@@ -136,6 +165,70 @@ impl Z80 {
             0x7A => ops::bit::bit(self, op),
             0x7B => ops::bit::bit(self, op),
             0x7C => ops::bit::bit(self, op),
+            0x86 => ops::res::res(self, op),
+            0x87 => ops::res::res(self, op),
+            0x80 => ops::res::res(self, op),
+            0x81 => ops::res::res(self, op),
+            0x82 => ops::res::res(self, op),
+            0x83 => ops::res::res(self, op),
+            0x84 => ops::res::res(self, op),
+            0x85 => ops::res::res(self, op),
+            0x8E => ops::res::res(self, op),
+            0x8F => ops::res::res(self, op),
+            0x88 => ops::res::res(self, op),
+            0x89 => ops::res::res(self, op),
+            0x8A => ops::res::res(self, op),
+            0x8B => ops::res::res(self, op),
+            0x8C => ops::res::res(self, op),
+            0x8D => ops::res::res(self, op),
+            0x96 => ops::res::res(self, op),
+            0x97 => ops::res::res(self, op),
+            0x90 => ops::res::res(self, op),
+            0x91 => ops::res::res(self, op),
+            0x92 => ops::res::res(self, op),
+            0x93 => ops::res::res(self, op),
+            0x94 => ops::res::res(self, op),
+            0x95 => ops::res::res(self, op),
+            0x9E => ops::res::res(self, op),
+            0x9F => ops::res::res(self, op),
+            0x98 => ops::res::res(self, op),
+            0x99 => ops::res::res(self, op),
+            0x9A => ops::res::res(self, op),
+            0x9B => ops::res::res(self, op),
+            0x9C => ops::res::res(self, op),
+            0x9D => ops::res::res(self, op),
+            0xA6 => ops::res::res(self, op),
+            0xA7 => ops::res::res(self, op),
+            0xA0 => ops::res::res(self, op),
+            0xA1 => ops::res::res(self, op),
+            0xA2 => ops::res::res(self, op),
+            0xA3 => ops::res::res(self, op),
+            0xA4 => ops::res::res(self, op),
+            0xA5 => ops::res::res(self, op),
+            0xAE => ops::res::res(self, op),
+            0xAF => ops::res::res(self, op),
+            0xA8 => ops::res::res(self, op),
+            0xA9 => ops::res::res(self, op),
+            0xAA => ops::res::res(self, op),
+            0xAB => ops::res::res(self, op),
+            0xAC => ops::res::res(self, op),
+            0xAD => ops::res::res(self, op),
+            0xB6 => ops::res::res(self, op),
+            0xB7 => ops::res::res(self, op),
+            0xB0 => ops::res::res(self, op),
+            0xB1 => ops::res::res(self, op),
+            0xB2 => ops::res::res(self, op),
+            0xB3 => ops::res::res(self, op),
+            0xB4 => ops::res::res(self, op),
+            0xB5 => ops::res::res(self, op),
+            0xBE => ops::res::res(self, op),
+            0xBF => ops::res::res(self, op),
+            0xB8 => ops::res::res(self, op),
+            0xB9 => ops::res::res(self, op),
+            0xBA => ops::res::res(self, op),
+            0xBB => ops::res::res(self, op),
+            0xBC => ops::res::res(self, op),
+            0xBD => ops::res::res(self, op),
             0x16 => ops::rotate::rl_r(self, op),
             0x17 => ops::rotate::rl_r(self, op),
             0x10 => ops::rotate::rl_r(self, op),
@@ -258,6 +351,7 @@ impl Z80 {
             0x72    => ops::ld::ld_u8_r_r(self, op),
             0x73    => ops::ld::ld_u8_r_r(self, op),
             0x74    => ops::ld::ld_u8_r_r(self, op),
+            0x75    => ops::ld::ld_u8_r_r(self, op),
             0x17    => ops::rotate::rl_r(self, op),
             0x3D    => ops::misc::dec_r(self, op),
             0x05    => ops::misc::dec_r(self, op),
@@ -402,6 +496,15 @@ impl Z80 {
             0xAB    => ops::xor::xor(self, op),
             0xAC    => ops::xor::xor(self, op),
             0xAD    => ops::xor::xor(self, op),
+            0x36    => ops::ld::ld_hl_n(self),
+            0xC7    => ops::misc::rst(self, op),
+            0xCF    => ops::misc::rst(self, op),
+            0xD7    => ops::misc::rst(self, op),
+            0xDF    => ops::misc::rst(self, op),
+            0xE7    => ops::misc::rst(self, op),
+            0xEF    => ops::misc::rst(self, op),
+            0xF7    => ops::misc::rst(self, op),
+            0xFF    => ops::misc::rst(self, op),
             _       => ops::misc::unimplemented_op(self, op),
         }
     }

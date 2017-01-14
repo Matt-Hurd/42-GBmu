@@ -76,6 +76,8 @@ fn main() {
     let mut debugger = debugger::simple_debug::Debugger::default();
     // debugger.enable(&mut core);
     loop {
+        let old_keys1 = core.mmu.keys[0];
+        let old_keys2 = core.mmu.keys[1];
         core.mmu.keys[0] = 0xF;
         core.mmu.keys[1] = 0xF;
         window.get_keys().map(|keys| {
@@ -89,10 +91,14 @@ fn main() {
                     Key::X => core.mmu.keys[0] &= 0b1110, //A
                     Key::Apostrophe => core.mmu.keys[0] &= 0b1011, //Select
                     Key::Enter => core.mmu.keys[0] &= 0b0111, //Start
+                    Key::P => debugger.enable(&mut core),
                     _ => (),
                 }
             }
         });
+        if old_keys1 != core.mmu.keys[0] || old_keys2 != core.mmu.keys[1] {
+            core.mmu.iflags &= 0b10000;
+        }
         frame(&mut core, &mut debugger, &mut tile_window);
         core.mmu.gpu.debug_update_bg();
         window.update_with_buffer(&core.mmu.gpu.screen);

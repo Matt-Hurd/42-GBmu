@@ -260,14 +260,39 @@ pub fn scf(z80: &mut Z80) {
     z80.set_register_clock(1);
 }
 
+pub fn int_handle(z80: &mut Z80, addr: u16) {
+    z80.r.ime = false;
+    z80.r.sp -= 2;
+    z80.mmu.ww(z80.r.sp, z80.r.pc);
+    z80.r.pc = addr;
+    z80.set_register_clock(3);
+}
+
+pub fn rst(z80: &mut Z80, op: u8) {
+    let addr = match op {
+        0xC7    => 0x0000,
+        0xCF    => 0x0008,
+        0xD7    => 0x0010,
+        0xDF    => 0x0018,
+        0xE7    => 0x0020,
+        0xEF    => 0x0028,
+        0xF7    => 0x0030,
+        0xFF    => 0x0038,
+        _       => 0x0000,
+    };
+    z80.r.sp -= 2;
+    z80.mmu.ww(z80.r.sp, z80.r.pc);
+    z80.r.pc = addr;
+    z80.set_register_clock(4);
+}
 
 pub fn di(z80: &mut Z80) {
-    z80.r.ime = 0;
+    z80.r.ime = false;
     z80.set_register_clock(1);
 }
 
 pub fn ei(z80: &mut Z80) {
-    z80.r.ime = 1;
+    z80.r.ime = true;
     z80.set_register_clock(1);
 }
 

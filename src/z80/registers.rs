@@ -11,7 +11,7 @@ pub struct Z80Registers {
     pub sp: u16,
     pub m: u16,
     pub t: u16,
-    pub ime: u8,
+    pub ime: bool,
 }
 
 impl Default for Z80Registers {
@@ -29,7 +29,7 @@ impl Default for Z80Registers {
             sp: 0,
             m: 0,
             t: 0,
-            ime: 0,
+            ime: false,
         }
     }
 }
@@ -38,15 +38,16 @@ impl Z80Registers {
     pub fn debug_print(&mut self) {
         println!("  a: 0x{:02X}       pc: {:#4X}", self.a,  self.pc);
         println!("  b: 0x{:02X}       sp: {:#4X}", self.b,  self.sp);
-        println!("  c: 0x{:02X}       m:  {}",      self.c,  self.m);
+        println!("  c: 0x{:02X}       m:  {}",     self.c,  self.m);
         println!("  d: 0x{:02X}       t: {}",      self.d,  self.t);
         println!("  e: 0x{:02X}       ime: {}",    self.e,  self.ime);
         let hl = self.get_hl();
-        println!("  h: 0x{:02X}       hl: {:#X}", self.h,  hl);
+        println!("  h: 0x{:02X}       hl: {:#X}",  self.h,  hl);
         let bc = self.get_bc();
-        println!("  l: 0x{:02X}       bc: {:#X}", self.l,  bc);
+        println!("  l: 0x{:02X}       bc: {:#X}",  self.l,  bc);
         let de = self.get_de();
-        println!("  f: 0x{:02X}       de: {:#X}", self.f,  de);
+        println!("  de: {:#X}", de);
+        println!("  f: {:08b}", self.f);
 
     }
 

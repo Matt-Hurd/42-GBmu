@@ -164,7 +164,7 @@ impl GPU {
     }
 
     //Doesn't handle preventing VRAM or OAM access
-    pub fn step(&mut self, register_m: u16) {
+    pub fn step(&mut self, register_m: u16) -> bool {
         self.mode_clock += register_m;
         match self.stat.mode {
             2   => { //OAM Search
@@ -189,6 +189,7 @@ impl GPU {
                     self.ly += 1;
                     if self.ly >= 144 {
                         self.stat.mode = 1;
+                        return true;
                     } else {
                         self.stat.mode = 3;
                     }
@@ -205,7 +206,8 @@ impl GPU {
                 }
             },
             _   => {}
-        }
+        };
+        return false;
     }
 
     pub fn get_tile_pixel(&mut self, id: u8, y: u8, x: u8) -> u8 {
@@ -284,6 +286,7 @@ impl GPU {
                 }
             }
             let pixel = fifo.pop_front().unwrap()[0];
+            // println!("LY: {}", self.ly);
             self.screen[((self.ly as u32) * 160 + (x as u32)) as usize] = self.translate_bg_color(pixel);
         }
     }
