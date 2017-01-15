@@ -20,5 +20,5 @@ pub fn call(z80: &mut Z80, op: u8) {
     z80.r.sp -= 2;
     z80.mmu.ww(z80.r.sp, z80.r.pc);
     z80.r.pc = z80.mmu.rw(z80.r.pc - 2);
-    z80.set_register_clock(5);
+    z80.set_register_clock(6);
 }

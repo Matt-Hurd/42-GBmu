@@ -35,8 +35,9 @@ pub fn jr_u8(z80: &mut Z80, op: u8) {
 ** Condition Bits: ____
 ** Clocks:
 **   (hl): 1
-**   cc true: 3
-**   cc false: 2
+**   $aabb: 2
+**   cc true: 2
+**   cc false: 1
 */
 pub fn jp_u16(z80: &mut Z80, op: u8) {
 
@@ -59,7 +60,11 @@ pub fn jp_u16(z80: &mut Z80, op: u8) {
     };
     if case {
         z80.r.pc = i;
-        z80.set_register_clock(3);
+        if op == 0xE9 {
+            z80.set_register_clock(3);
+        } else {
+            z80.set_register_clock(4);
+        }
     }
     else if op == 0xE9 {
         z80.set_register_clock(1);

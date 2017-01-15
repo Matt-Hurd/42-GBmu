@@ -159,14 +159,14 @@ impl MMU {
             //I/O
             0xFF00              => self.column = val & 0b00110000,
             //Serial Transfer (Used for Blargg's tests)
-            0xFF01              => print!("{}", val as char),
+            0xFF01              => (), //print!("{}", val as char),
             0xFF0F              => self.iflags = val,
             //Sound I/O
             0xFF10 ... 0xFF3F   => (),
             0xFF40 ... 0xFF7F   => self.gpu.wb(addr, val),
             //HRAM
             0xFF80 ... 0xFFFE   => self.hram[(addr & 0x7F) as usize] = val,
-            0xFFFF              => {self.ienable = val; println!("Enabling interrupts {:05b}", val)},
+            0xFFFF              => self.ienable = val,
             _                   => (),
         };
     }

@@ -74,13 +74,13 @@ pub fn ld_nn_a(z80: &mut Z80) {
 /*
 ** LD ($xx), A
 ** Condition Bits: ____
-** Clocks: 2
+** Clocks: 3
 */
 pub fn ld_n_a(z80: &mut Z80) {
     let addr = z80.mmu.rb(z80.r.pc) as u16;
     z80.r.pc += 1;
     z80.mmu.wb(0xFF00 + addr, z80.r.a);
-    z80.set_register_clock(2);
+    z80.set_register_clock(3);
 }
 
 /*
@@ -129,7 +129,7 @@ pub fn ld_a_c(z80: &mut Z80) {
 pub fn ld_a_n(z80: &mut Z80) {
     let addr = z80.mmu.rb(z80.r.pc);
     z80.r.pc += 1;
-    z80.r.a = z80.mmu.rb(0xFF00 + addr as u16);
+    z80.r.a = z80.mmu.rb(0xFF00 | addr as u16);
     z80.set_register_clock(3);
 }
 

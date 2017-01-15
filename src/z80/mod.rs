@@ -29,6 +29,7 @@ pub struct Z80 {
     pub debug: bool,
     pub debug_r: bool,
     pub halted: bool,
+    pub count: u32, //temporary
 }
 
 impl Default for Z80 {
@@ -41,6 +42,7 @@ impl Default for Z80 {
             debug: false,
             debug_r: false,
             halted: false,
+            count: 0,
         }
     }
 }
@@ -80,47 +82,101 @@ impl Z80 {
         }
     }
 
+    pub fn handle_interrupts(&mut self) -> u32 {
+        if !self.r.ime && !self.halted {
+            return 0;
+        }
+        let interrupts = self.mmu.ienable & self.mmu.iflags;
+        self.halted = false;
+        if interrupts == 0 {
+            return 0;
+        }
+        if self.r.ime == false {
+            return 0;
+        }
+        if interrupts & 0b00001 != 0 {
+            self.mmu.iflags &= 0b11110;
+            ops::misc::int_handle(self, 0x40);
+        }
+        if interrupts & 0b00010 != 0 {
+            self.mmu.iflags &= 0b11101;
+            ops::misc::int_handle(self, 0x48);
+        }
+        if interrupts & 0b00100 != 0 {
+            self.mmu.iflags &= 0b11011;
+            ops::misc::int_handle(self, 0x50);
+        }
+        if interrupts & 0b01000 != 0 {
+            self.mmu.iflags &= 0b10111;
+            ops::misc::int_handle(self, 0x58);
+        }
+        if interrupts & 0b10000 != 0 {
+            self.mmu.iflags &= 0b01111;
+            ops::misc::int_handle(self, 0x60);
+        }
+        return 4
+    }
+
     pub fn step(&mut self) {
+        let time = self.handle_interrupts();
+        self.clock.m = self.clock.m.wrapping_add(time);
+        self.clock.t = self.clock.t.wrapping_add(time);
         if !self.halted {
             let op = self.mmu.rb(self.r.pc);
             self.r.pc += 1;
+            if self.r.pc > 0x100 {
+                self.count += 1;
+                // print!("OP: {:X}, PC: {:X}, a: {:X}, b: {:X}, c: {:X}, d: {:X}, e: {:X}, h: {:X}, l: {:X}, sp: {:X}, ly: {}, m ", op, self.r.pc, self.r.a, self.r.b, self.r.c, self.r.d, self.r.e, self.r.h, self.r.l, self.r.sp, self.mmu.gpu.ly);
+            }
             self.do_op(op);
+            if self.r.pc > 0x100 {
+                // println!("{}", self.r.m);
+            }
             self.r.pc &= 0xFFFF;
             if self.r.pc == 0x0100 {
                 self.mmu.in_bios = false;
+                self.r.a = 0x11;
+                self.mmu.wb(0xFF05, 0);
+                self.mmu.wb(0xFF06, 0);
+                self.mmu.wb(0xFF07, 0);
+                self.mmu.wb(0xFF10, 0x80);
+                self.mmu.wb(0xFF11, 0xBF);
+                self.mmu.wb(0xFF12, 0xF3);
+                self.mmu.wb(0xFF14, 0xBF);
+                self.mmu.wb(0xFF16, 0x3F);
+                self.mmu.wb(0xFF16, 0x3F);
+                self.mmu.wb(0xFF17, 0);
+                self.mmu.wb(0xFF19, 0xBF);
+                self.mmu.wb(0xFF1A, 0x7F);
+                self.mmu.wb(0xFF1B, 0xFF);
+                self.mmu.wb(0xFF1C, 0x9F);
+                self.mmu.wb(0xFF1E, 0xFF);
+                self.mmu.wb(0xFF20, 0xFF);
+                self.mmu.wb(0xFF21, 0);
+                self.mmu.wb(0xFF22, 0);
+                self.mmu.wb(0xFF23, 0xBF);
+                self.mmu.wb(0xFF24, 0x77);
+                self.mmu.wb(0xFF25, 0xF3);
+                self.mmu.wb(0xFF26, 0xF1);
+                self.mmu.wb(0xFF40, 0x91);
+                self.mmu.wb(0xFF42, 0);
+                self.mmu.wb(0xFF43, 0);
+                self.mmu.wb(0xFF45, 0);
+                self.mmu.wb(0xFF47, 0xFC);
+                self.mmu.wb(0xFF48, 0xFF);
+                self.mmu.wb(0xFF49, 0xFF);
+                self.mmu.wb(0xFF4A, 0);
+                self.mmu.wb(0xFF4B, 0);
             }
-            self.clock.m = self.clock.m.wrapping_add(self.r.m as u32);
-            self.clock.t = self.clock.t.wrapping_add(self.r.t as u32);
+        } else {
+            ops::misc::nop(self);
         }
+        self.clock.m = self.clock.m.wrapping_add(self.r.m as u32);
+        self.clock.t = self.clock.t.wrapping_add(self.r.t as u32);
         if self.mmu.gpu.step(self.r.m) {
             self.mmu.iflags |= 0b00001;
         } else {
             self.mmu.iflags &= 0b11110;
-        }
-        if self.r.ime && self.mmu.iflags != 0 {
-            let interrupts = self.mmu.ienable & self.mmu.iflags;
-            if interrupts & 0b00001 != 0 {
-                self.mmu.iflags &= 0b11110;
-                ops::misc::int_handle(self, 0x40);
-            }
-            if interrupts & 0b00010 != 0 {
-                self.mmu.iflags &= 0b11101;
-                ops::misc::int_handle(self, 0x48);
-            }
-            if interrupts & 0b00100 != 0 {
-                self.mmu.iflags &= 0b11011;
-                ops::misc::int_handle(self, 0x50);
-            }
-            if interrupts & 0b01000 != 0 {
-                self.mmu.iflags &= 0b10111;
-                ops::misc::int_handle(self, 0x58);
-            }
-            if interrupts & 0b10000 != 0 {
-                self.mmu.iflags &= 0b01111;
-                ops::misc::int_handle(self, 0x60);
-            }
-            self.clock.m = self.clock.m.wrapping_add(self.r.m as u32);
-            self.clock.t = self.clock.t.wrapping_add(self.r.t as u32);
         }
     }
 

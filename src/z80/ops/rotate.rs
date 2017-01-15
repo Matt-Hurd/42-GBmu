@@ -62,7 +62,7 @@ pub fn rr_r(z80: &mut Z80, op: u8) {
         _   => 0,
     };
     let extra = val & 0b1;
-    val = (val & 0xFE) >> 1;
+    val = val >> 1;
     if op & 0xF0 != 1 {
         val |= z80.r.get_carry() << 7;
     } else {

@@ -113,7 +113,7 @@ pub fn translate_op(op: u8, addr: u16, z80: &mut Z80) {
         0x6C => "LD L,H",
         0x6D => "LD L,L",
         0x6E => "LD L,(HL)",
-        0x6F => "LD H,A",
+        0x6F => "LD L,A",
         0x70 => "LD (HL),B",
         0x71 => "LD (HL),C",
         0x72 => "LD (HL),D",

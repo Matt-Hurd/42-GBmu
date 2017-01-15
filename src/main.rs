@@ -17,10 +17,10 @@ fn reset(z80: &mut z80::Z80, rom_path: path::PathBuf) {
     z80.reset();
 
     let result = z80.mmu.load(rom_path);
-    match result {
-        Ok(n) => (println!("{}", n)),
-        Err(err) => println!("Error: {}", err),
-    }
+    // match result {
+    //     Ok(n) => (println!("{}", n)),
+    //     Err(err) => println!("Error: {}", err),
+    // }
 }
 
 fn frame(z80: &mut z80::Z80, debugger: &mut debugger::simple_debug::Debugger) {
@@ -42,10 +42,10 @@ fn main() {
 
     let mut core: z80::Z80 = z80::Z80::default();
     let result = core.mmu.load(path::PathBuf::from(&args[1]));
-    match result {
-        Ok(n) => println!("{}", n),
-        Err(err) => println!("Error: {}", err),
-    }
+    // match result {
+    //     Ok(n) => println!("{}", n),
+    //     Err(err) => println!("Error: {}", err),
+    // }
     reset(&mut core, path::PathBuf::from(&args[1]));
     let mut window = match Window::new("GBmu", WIDTH, HEIGHT,
                                        WindowOptions {

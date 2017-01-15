@@ -20,7 +20,7 @@ pub fn push(z80: &mut Z80, op: u8) {
     z80.mmu.wb(z80.r.sp, ((val & 0xFF00) >> 8) as u8);
     z80.r.sp -= 1;
     z80.mmu.wb(z80.r.sp, (val & 0xFF) as u8);
-    z80.set_register_clock(3);
+    z80.set_register_clock(4);
 }
 
 /*
@@ -142,7 +142,7 @@ pub fn inc_rr(z80: &mut Z80, op: u8) {
 pub fn dec_hl(z80: &mut Z80) {
     let mut val = z80.mmu.rb(z80.r.get_hl());
     z80.r.set_subtract(true);
-    z80.r.set_half_carry(val & 0b00010000 != 0);
+    z80.r.set_half_carry(val & 0b00011111 == 0b00010000);
     z80.r.set_zero(val == 0x01);
     val = val.wrapping_sub(1);
     z80.mmu.wb(z80.r.get_hl(), val);
@@ -166,13 +166,9 @@ pub fn dec_r(z80: &mut Z80, op: u8) {
         _       => 0,
     };
     z80.r.set_subtract(true);
-    z80.r.set_half_carry(val & 0b00010000 != 0);
-    z80.r.set_zero(val == 0x01);
-    if val == 0x0 {
-        val = 0xFF;
-    } else {
-        val -= 1;
-    }
+    val = val.wrapping_sub(1);
+    z80.r.set_half_carry((val & 0xF) == 0);
+    z80.r.set_zero(val == 0x00);
     match op {
         0x3D    => z80.r.a = val,
         0x05    => z80.r.b = val,
@@ -243,16 +239,14 @@ pub fn scf(z80: &mut Z80) {
 }
 
 pub fn int_handle(z80: &mut Z80, addr: u16) {
-    z80.backup_registers();
     z80.r.ime = false;
     z80.r.sp -= 2;
     z80.mmu.ww(z80.r.sp, z80.r.pc);
     z80.r.pc = addr;
-    z80.set_register_clock(3);
+    z80.set_register_clock(4);
 }
 
 pub fn rst(z80: &mut Z80, op: u8) {
-    z80.backup_registers();
     let addr = match op {
         0xC7    => 0x0000,
         0xCF    => 0x0008,
@@ -280,15 +274,8 @@ pub fn ei(z80: &mut Z80) {
     z80.set_register_clock(1);
 }
 
-//Apparently CGB mode doesn't skip an extra op
 pub fn halt(z80: &mut Z80) {
-    if z80.r.ime {
-        z80.halted = true;
-    } else {
-        z80.r.pc += 1;
-        z80.step();
-        z80.r.pc -= 1;
-    }
+    z80.halted = true;
 }
 
 pub fn unimplemented_op(op: u8) {

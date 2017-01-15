@@ -6,6 +6,8 @@ pub struct Debugger {
     pub stopped: bool,
     pub breakpoints: Vec<u16>,
     pub skip: u16,
+    pub used_ops: Vec<u16>,
+    pub log: bool,
 }
 
 impl Default for Debugger {
@@ -14,7 +16,9 @@ impl Default for Debugger {
             enabled: false,
             stopped: true,
             breakpoints: vec![],
+            used_ops: vec![],
             skip: 0,
+            log: false,
         }
     }
 }
@@ -25,6 +29,32 @@ impl Debugger {
         z80.debug_r = true;
         self.enabled = true;
         self.stopped = true;
+    }
+
+    pub fn log_ops(&mut self, z80: &mut z80::Z80) {
+        let mut used = false;
+        let mut opcode = z80.mmu.rb(z80.r.pc) as u16;
+        if opcode == 0xCB {
+            opcode = (opcode << 8) + z80.mmu.rb(z80.r.pc + 1) as u16;
+        }
+        for op in 0 .. self.used_ops.len() {
+            if self.used_ops[op] == opcode {
+                used = true;
+            }
+        }
+        if !used {
+            self.used_ops.push(opcode);
+        }
+    }
+
+    pub fn print_logged_ops(&mut self, z80: &mut z80::Z80) {
+        for op in 0 .. self.used_ops.len() {
+            if self.used_ops[op] & 0xCB00 == 0 {
+                z80::debug::translate_op(self.used_ops[op] as u8, 0, z80);
+            } else {
+                z80::debug::translate_cb((self.used_ops[op] & 0xFF) as u8, 0);
+            }
+        }
     }
 
     pub fn print_map_info(&mut self, z80: &mut z80::Z80) {
@@ -76,6 +106,9 @@ impl Debugger {
         }
 
     pub fn step(&mut self, z80: &mut z80::Z80) {
+        // if z80.count > 35165 {
+        //     self.enable(z80);
+        // }
         if self.enabled {
             let mut done = false;
             self.check_breakpoints(z80);
@@ -83,6 +116,9 @@ impl Debugger {
             // if z80.r.pc >= 0x2AE0 || z80.r.sp < 0xFF00 {
             //     self.stopped = true;
             // }
+            if self.log {
+                self.log_ops(z80);
+            }
             while self.stopped && !done {
                 let mut input = String::new();
                 io::stdin().read_line(&mut input)
@@ -105,6 +141,12 @@ impl Debugger {
                 }
                 if line == "edo" || line == "enable_d" {
                     z80.debug = true;
+                }
+                if line == "ops" {
+                    self.log = true;
+                }
+                if line == "po" {
+                    self.print_logged_ops(z80);
                 }
                 if line == "r" {
                     self.print_debug(z80, true);
