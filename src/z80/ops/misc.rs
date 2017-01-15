@@ -71,13 +71,8 @@ pub fn inc_hl(z80: &mut Z80) {
     let mut val = z80.mmu.rb(z80.r.get_hl());
     z80.r.set_subtract(false);
     z80.r.set_half_carry(val & 0xF == 0xF);
-    if val == 0xFF {
-        z80.r.set_zero(true);
-        val = 0;
-    } else {
-        z80.r.set_zero(false);
-        val += 1;
-    }
+    val = val.wrapping_add(1);
+    z80.r.set_zero(val == 0);
     z80.mmu.wb(z80.r.get_hl(), val);
     z80.set_register_clock(3);
 }
@@ -100,13 +95,8 @@ pub fn inc_r(z80: &mut Z80, op: u8) {
     };
     z80.r.set_subtract(false);
     z80.r.set_half_carry(val & 0xF == 0xF);
-    if val == 0xFF {
-        z80.r.set_zero(true);
-        val = 0;
-    } else {
-        z80.r.set_zero(false);
-        val += 1;
-    }
+    val = val.wrapping_add(1);
+    z80.r.set_zero(val == 0);
     match op {
         0x3C    => z80.r.a = val,
         0x04    => z80.r.b = val,
@@ -133,11 +123,7 @@ pub fn inc_rr(z80: &mut Z80, op: u8) {
         0x33    => z80.r.sp,
         _       => 0,
     };
-    if val == 0xFFFF {
-        val = 0;
-    } else {
-        val += 1;
-    }
+    val = val.wrapping_add(1);
     match op {
         0x03    => z80.r.set_bc(val),
         0x13    => z80.r.set_de(val),
@@ -158,11 +144,7 @@ pub fn dec_hl(z80: &mut Z80) {
     z80.r.set_subtract(true);
     z80.r.set_half_carry(val & 0b00010000 != 0);
     z80.r.set_zero(val == 0x01);
-    if val == 0x0 {
-        val = 0xFF;
-    } else {
-        val -= 1;
-    }
+    val = val.wrapping_sub(1);
     z80.mmu.wb(z80.r.get_hl(), val);
     z80.set_register_clock(3);
 }

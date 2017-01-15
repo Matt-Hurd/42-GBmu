@@ -1,5 +1,4 @@
 use z80::Z80;
-use std::num::Wrapping;
 
 /*
 ** LD r8|(HL), r8|(HL)
@@ -212,7 +211,7 @@ pub fn ldd_hl(z80: &mut Z80, op: u8) {
     } else {
         z80.mmu.wb(z80.r.get_hl(), z80.r.a);
     }
-    z80.r.set_hl((Wrapping(hl) - Wrapping(1)).0);
+    z80.r.set_hl(hl.wrapping_sub(1));
     z80.set_register_clock(2);
 }
 
@@ -228,6 +227,6 @@ pub fn ldi_hl(z80: &mut Z80, op: u8) {
         z80.mmu.wb(z80.r.get_hl(), z80.r.a);
     }
     let hl = z80.r.get_hl();
-    z80.r.set_hl((Wrapping(hl) + Wrapping(1)).0);
+    z80.r.set_hl(hl.wrapping_add(1));
     z80.set_register_clock(2);
 }

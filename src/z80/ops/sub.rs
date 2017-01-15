@@ -1,5 +1,4 @@
 use z80::Z80;
-use std::num::Wrapping;
 
 pub fn sub(z80: &mut Z80, op: u8) {
     let a = z80.r.a;
@@ -25,7 +24,7 @@ pub fn sub(z80: &mut Z80, op: u8) {
     else if val > z80.r.a {
         z80.r.set_carry(true);
     }
-    z80.r.a = (Wrapping(a) - Wrapping(val)).0;
+    z80.r.a = a.wrapping_sub(val);
     if (z80.r.a ^ val ^ a) & 0x10 != 0 {
         z80.r.set_half_carry(true);
     }

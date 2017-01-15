@@ -59,7 +59,7 @@ fn main() {
             return;
         }
     };
-    // let tile_window = match Window::new("tile_map", 16 * 8, 24 * 8,
+    // let mut tile_window = match Window::new("tile_map", 16 * 8, 24 * 8,
     //                                    WindowOptions {
     //                                        resize: false,
     //                                        scale: Scale::X4,

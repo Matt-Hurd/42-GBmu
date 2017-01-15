@@ -1,6 +1,4 @@
 use z80::Z80;
-use std::num::Wrapping;
-
 /*
 ** ADC A, (hl)|n|r
 ** Condition Bits: R0RR
@@ -32,7 +30,7 @@ pub fn adc(z80: &mut Z80, op: u8) {
     if (val & 0xF) + (z80.r.a & 0xF) & 0x10 != 0 {
         z80.r.set_half_carry(true);
     }
-    z80.r.a = (Wrapping(val) + Wrapping(z80.r.a) + Wrapping(z80.r.get_carry())).0;
+    z80.r.a = val.wrapping_add(z80.r.a.wrapping_add(z80.r.get_carry()));
     if op == 0x8E || op == 0xCE {
         z80.set_register_clock(2);
     } else {

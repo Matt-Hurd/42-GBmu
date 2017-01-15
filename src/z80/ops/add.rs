@@ -1,6 +1,4 @@
 use z80::Z80;
-use std::num::Wrapping;
-
 /*
 ** ADD A, r|(hl)|$xx
 ** Condition Bits: R0RR
@@ -27,7 +25,7 @@ pub fn add_a(z80: &mut Z80, op: u8) {
         _       => 0,
     };
     z80.r.clear_flags();
-    z80.r.a = (Wrapping(a) + Wrapping(val)).0;
+    z80.r.a = a.wrapping_add(val);
     if z80.r.a == 0 {
         z80.r.set_zero(true);
     }
@@ -55,9 +53,9 @@ pub fn add_sp_n(z80: &mut Z80) {
     z80.r.pc += 1;
     z80.r.clear_flags();
     if val > 127 {
-        z80.r.sp = (Wrapping(z80.r.sp) - Wrapping(256 - val)).0;
+        z80.r.sp = z80.r.sp.wrapping_sub(256 - val as u16);
     } else {
-        z80.r.sp = (Wrapping(z80.r.sp) + Wrapping(val)).0;
+        z80.r.sp = z80.r.sp.wrapping_add(val as u16);
     }
     if z80.r.sp == 0 {
         z80.r.set_zero(true);
@@ -86,7 +84,7 @@ pub fn add_hl(z80: &mut Z80, op: u8) {
         0x39    => z80.r.sp,
         _       => 0,
     };
-    z80.r.set_hl((Wrapping(hl) + Wrapping(val)).0);
+    z80.r.set_hl(hl.wrapping_add(val));
     z80.r.set_subtract(false);
     if z80.r.get_hl() < hl {
         z80.r.set_carry(true);
