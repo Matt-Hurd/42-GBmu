@@ -165,9 +165,9 @@ pub fn dec_r(z80: &mut Z80, op: u8) {
         0x2D    => z80.r.l,
         _       => 0,
     };
+    z80.r.set_half_carry((val & 0xF) == 0);
     z80.r.set_subtract(true);
     val = val.wrapping_sub(1);
-    z80.r.set_half_carry((val & 0xF) == 0);
     z80.r.set_zero(val == 0x00);
     match op {
         0x3D    => z80.r.a = val,

@@ -106,7 +106,7 @@ impl Debugger {
         }
 
     pub fn step(&mut self, z80: &mut z80::Z80) {
-        // if z80.count > 35165 {
+        // if z80.count > 35260 {
         //     self.enable(z80);
         // }
         if self.enabled {

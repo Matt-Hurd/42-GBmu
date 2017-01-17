@@ -169,51 +169,34 @@ impl GPU {
             return false;
         }
         self.mode_clock += register_m;
-        match self.stat.mode {
-            2   => { //OAM Search
-                //Decides which sprites are visible
-                //Puts sprites that are visibile into array of up to 10
-                //x != 0 && line >= sprite.y && line <= sprite.y + sprite.h
-                if self.mode_clock >= 20 {
-                    self.mode_clock -= 20;
-                    // println!("Mode Change: 3");
-                    self.stat.mode = 3;
+        if self.mode_clock >= 114 {
+            self.mode_clock -= 114;
+            self.ly = (self.ly + 1) % 154;
+            if self.ly >= 144 && self.stat.mode != 1 {
+                self.stat.mode = 1;
+                // println!("Mode Change: 1");
+                return true;
+            }
+        }
+        if self.ly < 144 {
+            if self.mode_clock <= 20 {
+                if self.stat.mode != 2 {
+                    self.stat.mode = 2;
+                    // println!("Mode Change: 2");
                 }
-            },
-            3   => { //Pixel Transfer
-                if self.mode_clock >= 43 {
-                    self.mode_clock -= 43;
-                    // println!("Mode Change: 0");
+            } else if self.mode_clock <= (20 + 43) {
+                if self.stat.mode != 3 {
+                    self.stat.mode = 3;
+                    // println!("Mode Change: 3");
+                }
+            } else {
+                if self.stat.mode != 0 {
                     self.stat.mode = 0;
+                    // println!("Mode Change: 0");
                     self.render_scanline();
                 }
-            },
-            0   => { //Hblank
-                if self.mode_clock >= 51 {
-                    self.mode_clock -= 51;
-                    self.ly += 1;
-                    if self.ly >= 144 {
-                        // println!("Mode Change: 1");
-                        self.stat.mode = 1;
-                        return true;
-                    } else {
-                        // println!("Mode Change: 2");
-                        self.stat.mode = 2;
-                    }
-                }
-            },
-            1   => { //Vblank
-                if self.mode_clock >= 114 {
-                    self.mode_clock -= 114;
-                    self.ly += 1;
-                    if self.ly >= 154 {
-                        self.stat.mode = 2;
-                        self.ly = 0;
-                    }
-                }
-            },
-            _   => {}
-        };
+            }
+        }
         return false;
     }
 

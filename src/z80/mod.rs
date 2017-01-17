@@ -126,16 +126,20 @@ impl Z80 {
             self.r.pc += 1;
             if self.r.pc > 0x100 {
                 self.count += 1;
-                // print!("OP: {:X}, PC: {:X}, a: {:X}, b: {:X}, c: {:X}, d: {:X}, e: {:X}, h: {:X}, l: {:X}, sp: {:X}, ly: {}, m ", op, self.r.pc, self.r.a, self.r.b, self.r.c, self.r.d, self.r.e, self.r.h, self.r.l, self.r.sp, self.mmu.gpu.ly);
+                print!("OP: {:X}, PC: {:X}, a: {:X}, b: {:X}, c: {:X}, d: {:X}, e: {:X}, h: {:X}, l: {:X}, sp: {:X}, f: {:b}, m ", op, self.r.pc, self.r.a, self.r.b, self.r.c, self.r.d, self.r.e, self.r.h, self.r.l, self.r.sp, self.r.f);
             }
             self.do_op(op);
             if self.r.pc > 0x100 {
-                // println!("{}", self.r.m);
+                println!("{}", self.r.m);
             }
             self.r.pc &= 0xFFFF;
             if self.r.pc == 0x0100 {
                 self.mmu.in_bios = false;
                 self.r.a = 0x11;
+                self.r.set_carry(true);
+                self.mmu.gpu.stat.mode = 0;
+                self.mmu.gpu.mode_clock = 0;
+                self.mmu.gpu.ly = 0;
                 self.mmu.wb(0xFF05, 0);
                 self.mmu.wb(0xFF06, 0);
                 self.mmu.wb(0xFF07, 0);
