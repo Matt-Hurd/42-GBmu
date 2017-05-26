@@ -32,7 +32,9 @@ pub fn cp_r(z80: &mut Z80, op: u8) {
     if z80.r.a < cmp {
         z80.r.set_carry(true);
     }
-    //Half carry somehow?
+    if z80.r.a & 0xf < cmp & 0xf {
+        z80.r.set_half_carry(true);
+    }
     if op == 0xBE || op == 0xFE {
         z80.set_register_clock(2);
     } else {

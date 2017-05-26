@@ -26,7 +26,7 @@ pub fn rl_r(z80: &mut Z80, op: u8) {
     if extra == 1 {
         z80.r.set_carry(true);
     }
-    if val == 0 {
+    if val == 0 && op & 0xF != 0x7 {
         z80.r.set_zero(true);
     }
     z80.set_register_clock(2);
@@ -72,7 +72,7 @@ pub fn rr_r(z80: &mut Z80, op: u8) {
     if extra == 1 {
         z80.r.set_carry(true);
     }
-    if val == 0 {
+    if val == 0 && op & 0xF != 0xF {
         z80.r.set_zero(true);
     }
     z80.set_register_clock(2);
